@@ -14,8 +14,13 @@ class HomeScreen extends ConsumerWidget {
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SnapTrack'),
+        title: const Text('NutriLens'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.analytics),
+            onPressed: () => context.push('/analytics'),
+            tooltip: 'Analytics',
+          ),
           IconButton(
             icon: const Icon(Icons.library_books),
             onPressed: () => context.push('/templates'),
@@ -33,6 +38,11 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddFoodOptions(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Add Food'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -40,13 +50,30 @@ class HomeScreen extends ConsumerWidget {
           children: [
             _buildDailySummaryCard(todayNutrition),
             const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: () => context.push('/camera'),
-              icon: const Icon(Icons.camera_alt),
-              label: const Text('Add Food'),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.all(20),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => context.push('/camera'),
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text('Take Photo'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => context.push('/text-entry'),
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Type Food'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -92,7 +119,7 @@ class HomeScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         const Text(
-          'Tap "Add Food" to get started',
+          'Use "Take Photo" or "Type Food" to get started',
           style: TextStyle(color: Colors.grey),
         ),
       ],
@@ -140,6 +167,44 @@ class HomeScreen extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+
+  void _showAddFoodOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'How would you like to add food?',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, size: 32),
+              title: const Text('Take a Photo'),
+              subtitle: const Text('Snap a picture of your food'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/camera');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit, size: 32),
+              title: const Text('Type Description'),
+              subtitle: const Text('Describe your food in text'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/text-entry');
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
     );
   }
 }

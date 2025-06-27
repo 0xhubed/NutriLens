@@ -7,7 +7,7 @@ import 'secure_storage_fallback.dart';
 
 class GeminiProvider extends AIProvider {
   static const String _apiKeyKey = 'gemini_api_key';
-  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1';
   
   final Dio _dio = Dio();
   
@@ -44,17 +44,20 @@ class GeminiProvider extends AIProvider {
   }
 
   @override
-  Future<FoodAnalysis> analyzeImage(File imageFile) async {
+  Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint}) async {
     final apiKey = await getApiKey();
-    if (apiKey == null || apiKey.isEmpty) {
-      throw AIProviderException('Gemini API key not configured', provider: this);
-    }
     
     try {
-      // For now, return mock data since we don't have a real API key
-      // In a real implementation, this would call Google Gemini Vision API
-      final mockData = _getMockAnalysis();
-      return FoodAnalysis.fromJson(mockData);
+      if (apiKey == null || apiKey.isEmpty) {
+        // Fall back to mock data if no API key is configured
+        print('Gemini: No API key configured, using mock data');
+        final mockData = _getMockAnalysis();
+        return FoodAnalysis.fromJson(mockData);
+      }
+      
+      // Make real API call to Gemini Vision
+      final analysisData = await _callGeminiVision(imageFile, apiKey, userHint);
+      return FoodAnalysis.fromJson(analysisData);
     } catch (e) {
       throw AIProviderException('Analysis failed: $e', provider: this, originalError: e);
     }
@@ -116,21 +119,23 @@ class GeminiProvider extends AIProvider {
     };
   }
 
-  Future<Map<String, dynamic>> _callGeminiVision(File imageFile, String apiKey) async {
+  Future<Map<String, dynamic>> _callGeminiVision(File imageFile, String apiKey, String? userHint) async {
     try {
       // Convert image to base64
       final bytes = await imageFile.readAsBytes();
       final base64Image = base64Encode(bytes);
       
       final response = await _dio.post(
-        '/models/gemini-pro-vision:generateContent?key=$apiKey',
+        '/models/gemini-1.5-flash:generateContent?key=$apiKey',
         data: {
           'contents': [
             {
               'parts': [
                 {
                   'text': '''
-Analyze this food image and provide detailed nutrition and categorization information in JSON format:
+Analyze this food image and provide detailed nutrition and categorization information.
+${userHint != null ? '\nUser description: "$userHint"\nPlease use this information to help identify the food accurately.\n' : ''}
+Return ONLY a valid JSON object with no additional text, markdown formatting, or explanation. The JSON should follow this exact structure:
 {
   "name": "Overall meal/food name",
   "calories": number,
@@ -169,12 +174,39 @@ Analyze this food image and provide detailed nutrition and categorization inform
       );
       
       final content = response.data['candidates'][0]['content']['parts'][0]['text'];
-      final jsonMatch = RegExp(r'\{.*?\}', dotAll: true).firstMatch(content);
       
-      if (jsonMatch != null) {
-        return jsonDecode(jsonMatch.group(0)!);
-      } else {
-        throw Exception('Could not parse nutrition data from response');
+      // Try to extract JSON from the response
+      // First, try to find a complete JSON object
+      final jsonStartIndex = content.indexOf('{');
+      if (jsonStartIndex == -1) {
+        throw Exception('No JSON found in response');
+      }
+      
+      // Find the matching closing brace
+      int braceCount = 0;
+      int jsonEndIndex = -1;
+      for (int i = jsonStartIndex; i < content.length; i++) {
+        if (content[i] == '{') braceCount++;
+        if (content[i] == '}') braceCount--;
+        if (braceCount == 0) {
+          jsonEndIndex = i + 1;
+          break;
+        }
+      }
+      
+      if (jsonEndIndex == -1) {
+        throw Exception('Incomplete JSON in response');
+      }
+      
+      final jsonString = content.substring(jsonStartIndex, jsonEndIndex);
+      
+      try {
+        return jsonDecode(jsonString);
+      } catch (e) {
+        // If parsing fails, log the content for debugging
+        print('Failed to parse JSON: $jsonString');
+        print('Full response: $content');
+        throw Exception('Invalid JSON format: $e');
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {

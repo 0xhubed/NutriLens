@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/models/food_entry.dart';
 import '../../data/providers/analysis_providers.dart';
+import '../../data/providers/camera_providers.dart';
 import '../../data/services/database_service.dart';
 import '../../data/services/ai_provider.dart';
 
@@ -31,6 +32,15 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   
   bool _showAlternatives = false;
   bool _userConfirmedCorrect = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    // Automatically start analysis when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startAnalysis();
+    });
+  }
   
   @override
   void dispose() {
@@ -138,13 +148,9 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   }
   
   Widget _buildAnalysisForm(FoodAnalysis? result) {
-    // Pre-fill form if we have analysis results
+    // Pre-fill form if we have analysis results and fields are empty
     if (result != null && _nameController.text.isEmpty) {
-      _nameController.text = result.name;
-      _caloriesController.text = result.calories.toString();
-      _proteinController.text = result.protein.toString();
-      _carbsController.text = result.carbs.toString();
-      _fatController.text = result.fat.toString();
+      _updateFormFields(result);
     }
     
     return Column(
@@ -243,6 +249,24 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     ref.read(foodAnalysisProvider.notifier).analyzeImage(widget.imageFile);
   }
   
+  void _updateFormFields(FoodAnalysis result) {
+    _nameController.text = result.name;
+    _caloriesController.text = result.calories.toString();
+    _proteinController.text = result.protein.toString();
+    _carbsController.text = result.carbs.toString();
+    _fatController.text = result.fat.toString();
+    
+    // Show brief confirmation that fields were updated
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Form updated with corrected values'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+  
   void _retryAnalysis() {
     _startAnalysis();
   }
@@ -283,9 +307,23 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       await dbService.saveFoodEntry(entry);
       
       if (mounted) {
+        // Reset camera and analysis state for new food entry
+        ref.read(selectedImageProvider.notifier).state = null;
+        ref.read(foodAnalysisProvider.notifier).reset();
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Food entry saved!')),
+          SnackBar(
+            content: const Text('Food entry saved!'),
+            action: SnackBarAction(
+              label: 'Add Another',
+              onPressed: () {
+                context.go('/camera');
+              },
+            ),
+          ),
         );
+        
+        // Navigate back to home and then allow easy access to camera
         context.go('/');
       }
     } catch (e) {
@@ -326,9 +364,40 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
               style: TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 16),
-            Row(
+            Column(
               children: [
-                Expanded(
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _userConfirmedCorrect = true;
+                      });
+                      // Update form fields with current analysis results
+                      final currentResult = ref.read(foodAnalysisProvider).value;
+                      if (currentResult != null) {
+                        _updateFormFields(currentResult);
+                      }
+                    },
+                    icon: const Icon(Icons.check),
+                    label: const Text('Looks Good'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showPartialCorrectionDialog(result),
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Partially Correct'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.blue,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () {
                       setState(() {
@@ -340,18 +409,6 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.orange,
                     ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        _userConfirmedCorrect = true;
-                      });
-                    },
-                    icon: const Icon(Icons.check),
-                    label: const Text('Looks Good'),
                   ),
                 ),
               ],
@@ -380,20 +437,37 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
         const SizedBox(height: 8),
         ...alternatives.map((alternative) => _buildAlternativeOption(alternative)),
         const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () {
-            setState(() {
-              _nameController.clear();
-              _caloriesController.clear();
-              _proteinController.clear();
-              _carbsController.clear();
-              _fatController.clear();
-              _userConfirmedCorrect = true;
-              _showAlternatives = false;
-            });
-          },
-          icon: const Icon(Icons.edit),
-          label: const Text('Enter Manually'),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _showHintDialog(),
+                icon: const Icon(Icons.help_outline),
+                label: const Text('Help AI'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.blue,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _nameController.clear();
+                    _caloriesController.clear();
+                    _proteinController.clear();
+                    _carbsController.clear();
+                    _fatController.clear();
+                    _userConfirmedCorrect = true;
+                    _showAlternatives = false;
+                  });
+                },
+                icon: const Icon(Icons.edit),
+                label: const Text('Enter Manually'),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -472,6 +546,144 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
         AlternativeFood('Rice Bowl', 280, 8, 45, 6),
       ];
     }
+  }
+  
+  void _showHintDialog() {
+    final hintController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Help AI Identify Your Food'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Describe what this food actually is:',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: hintController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  hintText: 'e.g., "This is porridge with berries and honey, not a Mediterranean bowl"',
+                  border: OutlineInputBorder(),
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'The AI will re-analyze the image with your description.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _reanalyzeWithHint(hintController.text);
+              },
+              child: const Text('Re-analyze'),
+            ),
+          ],
+        );
+      },
+    ).then((_) {
+      hintController.dispose();
+    });
+  }
+
+  void _reanalyzeWithHint(String hint) {
+    if (hint.trim().isEmpty) return;
+    
+    setState(() {
+      _showAlternatives = false;
+      _userConfirmedCorrect = false;
+    });
+    
+    // Re-analyze with hint
+    ref.read(foodAnalysisProvider.notifier).analyzeImageWithHint(widget.imageFile, hint);
+  }
+
+  void _showPartialCorrectionDialog(FoodAnalysis result) {
+    final correctionController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Partially Correct'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'AI detected: ${result.name}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'What corrections should be made?',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: correctionController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  hintText: 'e.g., "It\'s porridge without fruits" or "Remove the cheese, add more vegetables"',
+                  border: OutlineInputBorder(),
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'The AI will adjust the nutrition information based on your correction.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _reanalyzeWithPartialCorrection(result, correctionController.text);
+              },
+              child: const Text('Apply Correction'),
+            ),
+          ],
+        );
+      },
+    ).then((_) {
+      correctionController.dispose();
+    });
+  }
+
+  void _reanalyzeWithPartialCorrection(FoodAnalysis originalResult, String correction) {
+    if (correction.trim().isEmpty) return;
+    
+    setState(() {
+      _showAlternatives = false;
+      _userConfirmedCorrect = false;
+    });
+    
+    // Create a more specific hint for partial corrections
+    final partialHint = 'The AI detected "${originalResult.name}" but this needs correction: $correction. Please adjust the nutrition information accordingly.';
+    
+    // Re-analyze with the partial correction hint
+    ref.read(foodAnalysisProvider.notifier).analyzeImageWithHint(widget.imageFile, partialHint);
   }
 }
 

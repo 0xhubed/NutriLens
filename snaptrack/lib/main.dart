@@ -29,7 +29,7 @@ void main() async {
       overrides: [
         databaseServiceProvider.overrideWithValue(dbService),
       ],
-      child: const SnapTrackApp(),
+      child: const NutriLensApp(),
     ),
   );
 }

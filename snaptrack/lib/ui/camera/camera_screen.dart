@@ -103,6 +103,15 @@ class CameraScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                 ),
               ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: () => context.push('/text-entry'),
+                icon: const Icon(Icons.edit),
+                label: const Text('Or Type Food Description'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                ),
+              ),
               if (Theme.of(context).platform == TargetPlatform.linux) ...[
                 const SizedBox(height: 16),
                 const Text(

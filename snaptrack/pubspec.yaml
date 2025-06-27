@@ -1,5 +1,5 @@
-name: snaptrack
-description: A privacy-first food tracking app
+name: nutrilens
+description: AI-powered nutrition tracking with photo and text analysis
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -36,9 +36,13 @@ dependencies:
   # UI Components
   cached_network_image: ^3.3.0
   
+  # Charts & Analytics
+  fl_chart: ^0.68.0
+  
   # Utilities
   intl: ^0.18.0
   collection: ^1.18.0
+  share_plus: ^7.2.0
 
 dev_dependencies:
   flutter_test:

@@ -33,6 +33,18 @@ class DatabaseService {
       });
     }
   }
+
+  Future<void> updateFoodEntry(FoodEntry updatedEntry) async {
+    final oldEntry = await isar.foodEntrys.get(updatedEntry.id);
+    await isar.writeTxn(() async {
+      await isar.foodEntrys.put(updatedEntry);
+      // Update daily nutrition for both old and new dates in case date changed
+      await _updateDailyNutrition(updatedEntry.timestamp);
+      if (oldEntry != null && !_isSameDay(oldEntry.timestamp, updatedEntry.timestamp)) {
+        await _updateDailyNutrition(oldEntry.timestamp);
+      }
+    });
+  }
   
   Future<List<FoodEntry>> getFoodEntriesForDate(DateTime date) async {
     final startOfDay = DateTime(date.year, date.month, date.day);
@@ -48,6 +60,22 @@ class DatabaseService {
     return isar.foodEntrys
         .where()
         .sortByTimestampDesc()
+        .watch(fireImmediately: true);
+  }
+  
+  Future<List<FoodEntry>> getFoodEntriesInRange(DateTime startDate, DateTime endDate) async {
+    return await isar.foodEntrys
+        .filter()
+        .timestampBetween(startDate, endDate, includeUpper: false)
+        .sortByTimestamp()
+        .findAll();
+  }
+  
+  Stream<List<FoodEntry>> watchFoodEntriesInRange(DateTime startDate, DateTime endDate) {
+    return isar.foodEntrys
+        .filter()
+        .timestampBetween(startDate, endDate, includeUpper: false)
+        .sortByTimestamp()
         .watch(fireImmediately: true);
   }
   
@@ -85,5 +113,11 @@ class DatabaseService {
     }
     
     await isar.dailyNutritions.put(daily);
+  }
+
+  bool _isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+           date1.month == date2.month &&
+           date1.day == date2.day;
   }
 }

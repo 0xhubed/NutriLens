@@ -20,7 +20,10 @@ class AIProviderManager {
 
   AIProvider? get activeProvider {
     final activeId = _activeProviderId;
-    if (activeId == null) return null;
+    if (activeId == null) {
+      // Fallback to first provider if not initialized yet
+      return _providers.isNotEmpty ? _providers.first : null;
+    }
     return _providers.firstWhere(
       (p) => p.providerId == activeId,
       orElse: () => _providers.first,
@@ -29,7 +32,10 @@ class AIProviderManager {
 
   AIProvider? get fallbackProvider {
     final fallbackId = _fallbackProviderId;
-    if (fallbackId == null) return null;
+    if (fallbackId == null) {
+      // Fallback to second provider if available, otherwise first
+      return _providers.length > 1 ? _providers[1] : (_providers.isNotEmpty ? _providers.first : null);
+    }
     return _providers.firstWhere(
       (p) => p.providerId == fallbackId,
       orElse: () => _providers.length > 1 ? _providers[1] : _providers.first,
@@ -73,7 +79,7 @@ class AIProviderManager {
     }
   }
 
-  Future<FoodAnalysis> analyzeWithFallback(File imageFile) async {
+  Future<FoodAnalysis> analyzeWithFallback(File imageFile, {String? userHint}) async {
     final active = activeProvider;
     if (active == null) {
       throw AIProviderException('No active provider configured');
@@ -82,7 +88,7 @@ class AIProviderManager {
     try {
       // Try primary provider first
       if (await active.validateConfiguration()) {
-        return await active.analyzeImage(imageFile);
+        return await active.analyzeImage(imageFile, userHint: userHint);
       } else {
         throw AIProviderException('Active provider not configured', provider: active);
       }
@@ -92,7 +98,7 @@ class AIProviderManager {
       if (fallback != null && fallback.providerId != active.providerId) {
         try {
           if (await fallback.validateConfiguration()) {
-            return await fallback.analyzeImage(imageFile);
+            return await fallback.analyzeImage(imageFile, userHint: userHint);
           }
         } catch (fallbackError) {
           // Both failed, throw original error with fallback info
@@ -197,5 +203,49 @@ class AIProviderManager {
       costs[provider.providerId] = estimateCost(provider, imageCount: imageCount);
     }
     return costs;
+  }
+
+  Future<TextAnalysisResult> analyzeTextDescription(String description) async {
+    final active = activeProvider;
+    if (active == null) {
+      throw AIProviderException('No active provider configured');
+    }
+
+    try {
+      // Check if provider supports text analysis
+      if (active is! TextAnalysisCapable) {
+        throw AIProviderException('Provider ${active.name} does not support text analysis');
+      }
+
+      if (await active.validateConfiguration()) {
+        return await (active as TextAnalysisCapable).analyzeTextDescription(description);
+      } else {
+        throw AIProviderException('Active provider not configured', provider: active);
+      }
+    } catch (e) {
+      // Try fallback if available
+      final fallback = fallbackProvider;
+      if (fallback != null && 
+          fallback.providerId != active.providerId && 
+          fallback is TextAnalysisCapable) {
+        try {
+          if (await fallback.validateConfiguration()) {
+            return await (fallback as TextAnalysisCapable).analyzeTextDescription(description);
+          }
+        } catch (fallbackError) {
+          throw AIProviderException(
+            'Both primary and fallback providers failed text analysis. Primary: $e, Fallback: $fallbackError',
+            provider: active,
+            originalError: e,
+          );
+        }
+      }
+      
+      if (e is AIProviderException) {
+        rethrow;
+      } else {
+        throw AIProviderException('Text analysis failed: $e', provider: active, originalError: e);
+      }
+    }
   }
 }

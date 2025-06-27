@@ -1,10 +1,10 @@
 class AppConfig {
   // App Information
-  static const String appName = 'SnapTrack';
+  static const String appName = 'NutriLens';
   static const String appVersion = '1.0.0';
   
   // Database
-  static const String databaseName = 'snaptrack_db';
+  static const String databaseName = 'nutrilens_db';
   
   // OpenAI Configuration
   static const String openAIBaseUrl = 'https://api.openai.com/v1';

@@ -51,6 +51,11 @@ class FoodEntry {
   late double fat;
   late DateTime timestamp;
   
+  // Weight information
+  double? estimatedWeight; // in grams
+  double? userWeight; // user-provided weight in grams
+  double get actualWeight => userWeight ?? estimatedWeight ?? 100.0; // fallback to 100g
+  
   // Optional fields
   String? notes;
   
@@ -99,6 +104,7 @@ class FoodItem {
   final double carbs;
   final double fat;
   final String? portion;
+  final double? weight; // in grams
 
   FoodItem({
     required this.name,
@@ -107,6 +113,7 @@ class FoodItem {
     required this.carbs,
     required this.fat,
     this.portion,
+    this.weight,
   });
 
   factory FoodItem.fromJson(Map<String, dynamic> json) {
@@ -117,6 +124,7 @@ class FoodItem {
       carbs: (json['carbs'] ?? 0).toDouble(),
       fat: (json['fat'] ?? 0).toDouble(),
       portion: json['portion'],
+      weight: json['estimatedWeight'] != null ? (json['estimatedWeight'] as num).toDouble() : null,
     );
   }
 }
@@ -129,6 +137,7 @@ class DetectedFoodItem {
   late double carbs;
   late double fat;
   String? portion;
+  double? weight; // in grams
   
   DetectedFoodItem();
   
@@ -139,5 +148,6 @@ class DetectedFoodItem {
     carbs = item.carbs;
     fat = item.fat;
     portion = item.portion;
+    weight = item.weight;
   }
 }

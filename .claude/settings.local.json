@@ -24,7 +24,9 @@
       "Bash(chmod:*)",
       "Bash(/home/hubed/projects/nutriLens/flutter/bin/flutter pub get)",
       "Bash(ls:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(rg:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

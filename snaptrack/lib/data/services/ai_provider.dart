@@ -1,9 +1,8 @@
-import 'dart:typed_data';
 import 'dart:io';
 import '../models/food_entry.dart';
 
 abstract class AIProvider {
-  Future<FoodAnalysis> analyzeImage(File imageFile);
+  Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint});
   String get name;
   String get providerId;
   bool get isConfigured;
@@ -18,6 +17,7 @@ class FoodAnalysis {
   final double protein;
   final double carbs;
   final double fat;
+  final double? estimatedWeight;
   final List<FoodItem>? detectedItems;
   final MealType suggestedMealType;
   final List<FoodGroup> suggestedFoodGroups;
@@ -32,6 +32,7 @@ class FoodAnalysis {
     required this.protein,
     required this.carbs,
     required this.fat,
+    this.estimatedWeight,
     this.detectedItems,
     this.suggestedMealType = MealType.snack,
     this.suggestedFoodGroups = const [],
@@ -48,6 +49,7 @@ class FoodAnalysis {
       protein: (json['protein'] ?? 0).toDouble(),
       carbs: (json['carbs'] ?? 0).toDouble(),
       fat: (json['fat'] ?? 0).toDouble(),
+      estimatedWeight: json['estimatedWeight'] != null ? (json['estimatedWeight'] as num).toDouble() : null,
       detectedItems: json['detectedItems'] != null
           ? (json['detectedItems'] as List)
               .map((item) => FoodItem.fromJson(item))
@@ -102,4 +104,51 @@ class AIProviderException implements Exception {
 
   @override
   String toString() => 'AIProviderException: $message';
+}
+
+// Interface for providers that support text-based food analysis
+abstract class TextAnalysisCapable {
+  Future<TextAnalysisResult> analyzeTextDescription(String description);
+}
+
+class FoodSuggestion {
+  final String name;
+  final double calories;
+  final double protein;
+  final double carbs;
+  final double fat;
+  final double? estimatedWeight;
+  final String? description;
+
+  FoodSuggestion({
+    required this.name,
+    required this.calories,
+    required this.protein,
+    required this.carbs,
+    required this.fat,
+    this.estimatedWeight,
+    this.description,
+  });
+
+  factory FoodSuggestion.fromJson(Map<String, dynamic> json) {
+    return FoodSuggestion(
+      name: json['name'] ?? '',
+      calories: (json['calories'] ?? 0).toDouble(),
+      protein: (json['protein'] ?? 0).toDouble(),
+      carbs: (json['carbs'] ?? 0).toDouble(),
+      fat: (json['fat'] ?? 0).toDouble(),
+      estimatedWeight: json['weight'] != null ? (json['weight'] as num).toDouble() : null,
+      description: json['description'],
+    );
+  }
+}
+
+class TextAnalysisResult {
+  final List<FoodSuggestion> suggestions;
+  final String? explanation;
+
+  TextAnalysisResult({
+    required this.suggestions,
+    this.explanation,
+  });
 }

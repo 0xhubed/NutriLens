@@ -1,12 +1,16 @@
-# SnapTrack
+# NutriLens
 
-A privacy-first food tracking app built with Flutter.
+An AI-powered nutrition tracking app with photo and text analysis, built with Flutter.
 
 ## Features
 
-- 📸 Photo-based food logging
-- 🧠 AI-powered nutrition analysis
-- 📊 Daily nutrition summaries
+- 📸 Photo-based food logging with AI analysis
+- ✍️ Text-based food entry and description
+- ⚖️ Weight tracking and portion-based calculations
+- 🧠 AI-powered nutrition analysis (OpenAI, Anthropic, Gemini)
+- 📊 Daily nutrition summaries and analytics
+- 📈 Progress tracking with macro distribution charts
+- 🗃️ Food history with editing capabilities
 - 📱 Clean, Material 3 design
 - 🔒 Privacy-first: all data stored locally
 

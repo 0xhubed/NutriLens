@@ -9,7 +9,8 @@ import '../services/openai_service.dart';
 // Provider for the AI provider manager
 final aiProviderManagerProvider = Provider<AIProviderManager>((ref) {
   final manager = AIProviderManager();
-  manager.initialize(); // Initialize async but don't await here
+  // Initialize in background - the manager now has proper fallbacks
+  manager.initialize();
   return manager;
 });
 
@@ -34,6 +35,17 @@ class FoodAnalysisNotifier extends StateNotifier<AsyncValue<FoodAnalysis?>> {
     
     try {
       final result = await _aiManager.analyzeWithFallback(imageFile);
+      state = AsyncValue.data(result);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+  
+  Future<void> analyzeImageWithHint(File imageFile, String hint) async {
+    state = const AsyncValue.loading();
+    
+    try {
+      final result = await _aiManager.analyzeWithFallback(imageFile, userHint: hint);
       state = AsyncValue.data(result);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);

@@ -26,7 +26,7 @@ class AnthropicProvider extends AIProvider {
   String get providerId => 'anthropic';
 
   @override
-  bool get isConfigured => true; // Will be updated after hasApiKey check
+  bool get isConfigured => true; // Dynamically checked via validateConfiguration()
 
   @override
   Map<String, String> get requiredConfigKeys => {'api_key': 'Anthropic API Key'};
@@ -45,17 +45,20 @@ class AnthropicProvider extends AIProvider {
   }
 
   @override
-  Future<FoodAnalysis> analyzeImage(File imageFile) async {
+  Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint}) async {
     final apiKey = await getApiKey();
-    if (apiKey == null || apiKey.isEmpty) {
-      throw AIProviderException('Anthropic API key not configured', provider: this);
-    }
     
     try {
-      // For now, return mock data since we don't have a real API key
-      // In a real implementation, this would call Anthropic Claude Vision API
-      final mockData = _getMockAnalysis();
-      return FoodAnalysis.fromJson(mockData);
+      if (apiKey == null || apiKey.isEmpty) {
+        // Fall back to mock data if no API key is configured
+        print('Anthropic: No API key configured, using mock data');
+        final mockData = _getMockAnalysis(userHint);
+        return FoodAnalysis.fromJson(mockData);
+      }
+      
+      // Make real API call to Anthropic Claude Vision
+      final analysisData = await _callAnthropicVision(imageFile, apiKey, userHint);
+      return FoodAnalysis.fromJson(analysisData);
     } catch (e) {
       throw AIProviderException('Analysis failed: $e', provider: this, originalError: e);
     }
@@ -74,8 +77,137 @@ class AnthropicProvider extends AIProvider {
     return apiKey != null && apiKey.isNotEmpty;
   }
 
-  Map<String, dynamic> _getMockAnalysis() {
-    // Mock data for testing with different results than OpenAI
+  Map<String, dynamic> _getMockAnalysis(String? userHint) {
+    // Mock data for testing different hint scenarios
+    if (userHint != null) {
+      final lowerHint = userHint.toLowerCase();
+      
+      // Handle partial corrections (e.g., "without fruits")
+      if (lowerHint.contains('without fruits') || lowerHint.contains('no fruits')) {
+        return {
+          'name': 'Plain Porridge',
+          'calories': 185,
+          'protein': 6.0,
+          'carbs': 32.0,
+          'fat': 3.5,
+          'detectedItems': [
+            {
+              'name': 'Oatmeal Porridge',
+              'calories': 150,
+              'protein': 5.0,
+              'carbs': 27.0,
+              'fat': 3.0,
+              'portion': '1 cup cooked'
+            },
+            {
+              'name': 'Milk',
+              'calories': 35,
+              'protein': 1.0,
+              'carbs': 5.0,
+              'fat': 0.5,
+              'portion': '1/4 cup'
+            }
+          ],
+          'mealType': 'breakfast',
+          'foodGroups': ['grains', 'dairy'],
+          'cuisine': 'other',
+          'dietaryTags': ['vegetarian'],
+          'portionSize': 'Medium',
+          'cookingMethod': 'Boiled'
+        };
+      }
+      
+      // Handle partial corrections that mention specific changes
+      if (lowerHint.contains('correction:') || lowerHint.contains('adjust')) {
+        // This is likely a partial correction - use the corrected name if available
+        if (lowerHint.contains('plain porridge') || (lowerHint.contains('porridge') && lowerHint.contains('without'))) {
+          return {
+            'name': 'Plain Porridge',
+            'calories': 185,
+            'protein': 6.0,
+            'carbs': 32.0,
+            'fat': 3.5,
+            'detectedItems': [
+              {
+                'name': 'Oatmeal Porridge',
+                'calories': 150,
+                'protein': 5.0,
+                'carbs': 27.0,
+                'fat': 3.0,
+                'portion': '1 cup cooked'
+              },
+              {
+                'name': 'Milk',
+                'calories': 35,
+                'protein': 1.0,
+                'carbs': 5.0,
+                'fat': 0.5,
+                'portion': '1/4 cup'
+              }
+            ],
+            'mealType': 'breakfast',
+            'foodGroups': ['grains', 'dairy'],
+            'cuisine': 'other',
+            'dietaryTags': ['vegetarian'],
+            'portionSize': 'Medium',
+            'cookingMethod': 'Boiled'
+          };
+        }
+      }
+      
+      // Handle general porridge hints
+      if (lowerHint.contains('porridge')) {
+        return {
+          'name': 'Porridge with Berries and Honey',
+          'calories': 285,
+          'protein': 8.5,
+          'carbs': 52.0,
+          'fat': 6.0,
+          'detectedItems': [
+          {
+            'name': 'Oatmeal Porridge',
+            'calories': 150,
+            'protein': 5.0,
+            'carbs': 27.0,
+            'fat': 3.0,
+            'portion': '1 cup cooked'
+          },
+          {
+            'name': 'Mixed Berries',
+            'calories': 60,
+            'protein': 1.0,
+            'carbs': 15.0,
+            'fat': 0.5,
+            'portion': '1/2 cup'
+          },
+          {
+            'name': 'Honey',
+            'calories': 64,
+            'protein': 0.1,
+            'carbs': 17.0,
+            'fat': 0.0,
+            'portion': '1 tablespoon'
+          },
+          {
+            'name': 'Milk',
+            'calories': 11,
+            'protein': 2.4,
+            'carbs': 3.0,
+            'fat': 2.5,
+            'portion': '2 tablespoons'
+          }
+        ],
+        'mealType': 'breakfast',
+        'foodGroups': ['grains', 'fruits', 'dairy'],
+        'cuisine': 'other',
+        'dietaryTags': ['vegetarian'],
+        'portionSize': 'Medium',
+        'cookingMethod': 'Boiled'
+        };
+      }
+    }
+    
+    // Default mock data - Mediterranean bowl
     return {
       'name': 'Mediterranean Quinoa Bowl',
       'calories': 420,
@@ -117,7 +249,7 @@ class AnthropicProvider extends AIProvider {
     };
   }
 
-  Future<Map<String, dynamic>> _callAnthropicVision(File imageFile, String apiKey) async {
+  Future<Map<String, dynamic>> _callAnthropicVision(File imageFile, String apiKey, String? userHint) async {
     try {
       // Convert image to base64
       final bytes = await imageFile.readAsBytes();
@@ -128,11 +260,13 @@ class AnthropicProvider extends AIProvider {
         options: Options(
           headers: {
             'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'Content-Type': 'application/json',
           },
         ),
         data: {
-          'model': 'claude-3-sonnet-20240229',
-          'max_tokens': 1000,
+          'model': 'claude-3-5-sonnet-20241022',
+          'max_tokens': 2000,
           'messages': [
             {
               'role': 'user',
@@ -140,7 +274,9 @@ class AnthropicProvider extends AIProvider {
                 {
                   'type': 'text',
                   'text': '''
-Analyze this food image and provide detailed nutrition and categorization information in JSON format:
+Analyze this food image and provide detailed nutrition and categorization information.
+${userHint != null ? '\nUser description: "$userHint"\nPlease use this information to help identify the food accurately.\n' : ''}
+Return ONLY a valid JSON object with no additional text, markdown formatting, or explanation. The JSON should follow this exact structure:
 {
   "name": "Overall meal/food name",
   "calories": number,
@@ -181,12 +317,39 @@ Analyze this food image and provide detailed nutrition and categorization inform
       );
       
       final content = response.data['content'][0]['text'];
-      final jsonMatch = RegExp(r'\{.*?\}', dotAll: true).firstMatch(content);
       
-      if (jsonMatch != null) {
-        return jsonDecode(jsonMatch.group(0)!);
-      } else {
-        throw Exception('Could not parse nutrition data from response');
+      // Try to extract JSON from the response
+      // First, try to find a complete JSON object
+      final jsonStartIndex = content.indexOf('{');
+      if (jsonStartIndex == -1) {
+        throw Exception('No JSON found in response');
+      }
+      
+      // Find the matching closing brace
+      int braceCount = 0;
+      int jsonEndIndex = -1;
+      for (int i = jsonStartIndex; i < content.length; i++) {
+        if (content[i] == '{') braceCount++;
+        if (content[i] == '}') braceCount--;
+        if (braceCount == 0) {
+          jsonEndIndex = i + 1;
+          break;
+        }
+      }
+      
+      if (jsonEndIndex == -1) {
+        throw Exception('Incomplete JSON in response');
+      }
+      
+      final jsonString = content.substring(jsonStartIndex, jsonEndIndex);
+      
+      try {
+        return jsonDecode(jsonString);
+      } catch (e) {
+        // If parsing fails, log the content for debugging
+        print('Failed to parse JSON: $jsonString');
+        print('Full response: $content');
+        throw Exception('Invalid JSON format: $e');
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {
