@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../data/models/food_entry.dart';
 import '../../data/providers/analysis_providers.dart';
 import '../../data/providers/camera_providers.dart';
@@ -23,7 +24,8 @@ class AnalysisScreen extends ConsumerStatefulWidget {
   ConsumerState<AnalysisScreen> createState() => _AnalysisScreenState();
 }
 
-class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
+class _AnalysisScreenState extends ConsumerState<AnalysisScreen> 
+    with TickerProviderStateMixin {
   final _nameController = TextEditingController();
   final _caloriesController = TextEditingController();
   final _proteinController = TextEditingController();
@@ -33,17 +35,67 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   bool _showAlternatives = false;
   bool _userConfirmedCorrect = false;
   
+  late AnimationController _slideController;
+  late AnimationController _fadeController;
+  late AnimationController _pulseController;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _pulseAnimation;
+  
   @override
   void initState() {
     super.initState();
-    // Automatically start analysis when screen loads
+    
+    // Initialize animations
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+    
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeOutCubic,
+    ));
+    
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    ));
+    
+    _pulseAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _pulseController,
+      curve: Curves.easeInOut,
+    ));
+    
+    // Start animations and analysis
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fadeController.forward();
       _startAnalysis();
     });
   }
   
   @override
   void dispose() {
+    _slideController.dispose();
+    _fadeController.dispose();
+    _pulseController.dispose();
     _nameController.dispose();
     _caloriesController.dispose();
     _proteinController.dispose();
@@ -55,90 +107,527 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   @override
   Widget build(BuildContext context) {
     final analysisState = ref.watch(foodAnalysisProvider);
+    final colorScheme = Theme.of(context).colorScheme;
     
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Food Analysis'),
+      backgroundColor: colorScheme.background,
+      body: CustomScrollView(
+        slivers: [
+          _buildModernAppBar(context, colorScheme),
+          SliverPadding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                _buildHeroImage(colorScheme),
+                const SizedBox(height: AppSpacing.xl),
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: analysisState.when(
+                      data: (result) => result != null ? _buildAnalysisContent(result, colorScheme) : Container(),
+                      loading: () => _buildModernLoadingState(colorScheme),
+                      error: (error, stack) => _buildModernErrorState(error, colorScheme),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xxxl),
+              ]),
+            ),
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Image preview
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.file(
-                widget.imageFile,
-                height: 200,
-                fit: BoxFit.cover,
-              ),
+    );
+  }
+  
+  Widget _buildModernAppBar(BuildContext context, ColorScheme colorScheme) {
+    return SliverAppBar(
+      expandedHeight: 120,
+      floating: true,
+      snap: true,
+      backgroundColor: colorScheme.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.only(
+          left: 56,
+          bottom: AppSpacing.md,
+        ),
+        title: Text(
+          'AI Analysis',
+          style: AppTextStyles.headlineLarge.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                colorScheme.primary.withOpacity(0.05),
+                colorScheme.tertiary.withOpacity(0.05),
+              ],
             ),
-            const SizedBox(height: 24),
-            
-            // Analysis result or loading
-            analysisState.when(
-              data: (result) => _buildAnalysisForm(result),
-              loading: () => _buildLoadingState(),
-              error: (error, stack) => _buildErrorState(error),
-            ),
-          ],
+          ),
+        ),
+      ),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_rounded),
+        onPressed: () => Navigator.of(context).pop(),
+        style: IconButton.styleFrom(
+          backgroundColor: colorScheme.surfaceVariant.withOpacity(0.8),
+          foregroundColor: colorScheme.onSurfaceVariant,
         ),
       ),
     );
   }
   
-  Widget _buildLoadingState() {
+  Widget _buildHeroImage(ColorScheme colorScheme) {
+    return Hero(
+      tag: 'selected-image',
+      child: Container(
+        height: 240,
+        decoration: BoxDecoration(
+          borderRadius: AppRadius.extraLarge,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: AppRadius.extraLarge,
+          child: Image.file(
+            widget.imageFile,
+            fit: BoxFit.cover,
+            width: double.infinity,
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildModernLoadingState(ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: AppRadius.extraLarge,
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          ScaleTransition(
+            scale: _pulseAnimation,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    colorScheme.primary.withOpacity(0.1),
+                    colorScheme.secondary.withOpacity(0.1),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: colorScheme.primary.withOpacity(0.3),
+                  width: 2,
+                ),
+              ),
+              child: Center(
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: colorScheme.primary,
+                      strokeWidth: 3,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          Text(
+            'Analyzing Your Food',
+            style: AppTextStyles.headlineMedium.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer.withOpacity(0.5),
+              borderRadius: AppRadius.extraLarge,
+            ),
+            child: Text(
+              'AI is identifying nutrition info',
+              style: AppTextStyles.labelMedium.copyWith(
+                color: colorScheme.primary,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            'This may take a few seconds while our AI analyzes your meal',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildModernErrorState(Object error, ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: AppRadius.extraLarge,
+        border: Border.all(
+          color: AppColors.error.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppColors.error.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.error_outline_rounded,
+              size: 40,
+              color: AppColors.error,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            'Analysis Failed',
+            style: AppTextStyles.headlineMedium.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.error.withOpacity(0.05),
+              borderRadius: AppRadius.medium,
+            ),
+            child: Text(
+              error.toString(),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.error,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _enterManually,
+                  icon: const Icon(Icons.edit_rounded),
+                  label: const Text('Enter Manually'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: _retryAnalysis,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Retry Analysis'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildAnalysisContent(FoodAnalysis result, ColorScheme colorScheme) {
     return Column(
       children: [
-        const CircularProgressIndicator(),
-        const SizedBox(height: 16),
-        Text(
-          'Analyzing your food...',
-          style: Theme.of(context).textTheme.titleMedium,
+        if (!_userConfirmedCorrect) _buildAIConfirmationCard(result, colorScheme),
+        if (_showAlternatives) ...[
+          const SizedBox(height: AppSpacing.lg),
+          _buildAlternativeSuggestions(result, colorScheme),
+        ],
+        const SizedBox(height: AppSpacing.lg),
+        _buildModernNutritionForm(colorScheme),
+      ],
+    );
+  }
+  
+  Widget _buildAIConfirmationCard(FoodAnalysis result, ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            colorScheme.primaryContainer.withOpacity(0.3),
+            colorScheme.secondaryContainer.withOpacity(0.3),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        const SizedBox(height: 8),
-        const Text(
-          'This may take a few seconds',
-          style: TextStyle(color: Colors.grey),
+        borderRadius: AppRadius.extraLarge,
+        border: Border.all(
+          color: colorScheme.primary.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withOpacity(0.15),
+                  borderRadius: AppRadius.small,
+                ),
+                child: Icon(
+                  Icons.psychology_rounded,
+                  color: colorScheme.primary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'AI Detection',
+                      style: AppTextStyles.titleLarge.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Is this identification correct?',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: AppRadius.large,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  result.name,
+                  style: AppTextStyles.headlineMedium.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _buildNutritionPreview(result, colorScheme),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          _buildConfirmationButtons(result, colorScheme),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildNutritionPreview(FoodAnalysis result, ColorScheme colorScheme) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildNutritionChip(
+            'Cal',
+            '${result.calories.toStringAsFixed(0)}',
+            AppColors.secondaryOrange,
+            Icons.local_fire_department_rounded,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: _buildNutritionChip(
+            'Protein',
+            '${result.protein.toStringAsFixed(1)}g',
+            AppColors.proteinPurple,
+            Icons.fitness_center_rounded,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: _buildNutritionChip(
+            'Carbs',
+            '${result.carbs.toStringAsFixed(1)}g',
+            AppColors.carbsBlue,
+            Icons.grain_rounded,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: _buildNutritionChip(
+            'Fat',
+            '${result.fat.toStringAsFixed(1)}g',
+            AppColors.fatsYellow,
+            Icons.water_drop_rounded,
+          ),
         ),
       ],
     );
   }
   
-  Widget _buildErrorState(Object error) {
+  Widget _buildNutritionChip(String label, String value, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: AppRadius.medium,
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: color,
+            size: 16,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            value,
+            style: AppTextStyles.labelLarge.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          Text(
+            label,
+            style: AppTextStyles.labelMedium.copyWith(
+              color: color.withOpacity(0.8),
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildConfirmationButtons(FoodAnalysis result, ColorScheme colorScheme) {
     return Column(
       children: [
-        const Icon(
-          Icons.error_outline,
-          size: 64,
-          color: Colors.red,
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: () {
+              setState(() {
+                _userConfirmedCorrect = true;
+                _showAlternatives = false;
+              });
+              _updateFormFields(result);
+              _slideController.forward();
+            },
+            icon: const Icon(Icons.check_circle_rounded),
+            label: const Text('Looks Good'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+            ),
+          ),
         ),
-        const SizedBox(height: 16),
-        Text(
-          'Analysis Failed',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          error.toString(),
-          style: const TextStyle(color: Colors.grey),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.sm),
         Row(
           children: [
             Expanded(
-              child: OutlinedButton(
-                onPressed: () => _enterManually(),
-                child: const Text('Enter Manually'),
+              child: ElevatedButton.icon(
+                onPressed: () => _showPartialCorrectionDialog(result),
+                icon: const Icon(Icons.tune_rounded),
+                label: const Text('Partially Correct'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.carbsBlue.withOpacity(0.1),
+                  foregroundColor: AppColors.carbsBlue,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                ),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
-              child: FilledButton(
-                onPressed: () => _retryAnalysis(),
-                child: const Text('Retry'),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _showAlternatives = true;
+                  });
+                },
+                icon: const Icon(Icons.close_rounded),
+                label: const Text('Not Correct'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.warning.withOpacity(0.1),
+                  foregroundColor: AppColors.warning,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                ),
               ),
             ),
           ],
@@ -147,101 +636,285 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     );
   }
   
-  Widget _buildAnalysisForm(FoodAnalysis? result) {
-    // Pre-fill form if we have analysis results and fields are empty
-    if (result != null && _nameController.text.isEmpty) {
-      _updateFormFields(result);
-    }
+  Widget _buildAlternativeSuggestions(FoodAnalysis result, ColorScheme colorScheme) {
+    final alternatives = _generateAlternatives(result.name);
     
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          result != null ? 'AI Analysis Results' : 'Enter Food Details',
-          style: Theme.of(context).textTheme.titleLarge,
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: AppRadius.extraLarge,
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 1,
         ),
-        const SizedBox(height: 16),
-        
-        // AI Confidence Check
-        if (result != null && !_userConfirmedCorrect) ...[
-          _buildAIConfirmationCard(result),
-          const SizedBox(height: 16),
-        ],
-        
-        TextFormField(
-          controller: _nameController,
-          decoration: const InputDecoration(
-            labelText: 'Food Name',
-            border: OutlineInputBorder(),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withOpacity(0.1),
+                  borderRadius: AppRadius.small,
+                ),
+                child: Icon(
+                  Icons.lightbulb_outline_rounded,
+                  color: AppColors.warning,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Text(
+                'Alternative Suggestions',
+                style: AppTextStyles.titleLarge.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 16),
-        
-        TextFormField(
-          controller: _caloriesController,
-          decoration: const InputDecoration(
-            labelText: 'Calories',
-            border: OutlineInputBorder(),
-            suffixText: 'kcal',
-          ),
-          keyboardType: TextInputType.number,
-        ),
-        const SizedBox(height: 16),
-        
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: _proteinController,
-                decoration: const InputDecoration(
-                  labelText: 'Protein',
-                  border: OutlineInputBorder(),
-                  suffixText: 'g',
+          const SizedBox(height: AppSpacing.lg),
+          ...alternatives.map((alt) => _buildAlternativeOption(alt, colorScheme)),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _showHintDialog(result),
+                  icon: const Icon(Icons.help_outline_rounded),
+                  label: const Text('Help AI'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.tertiary.withOpacity(0.1),
+                    foregroundColor: colorScheme.tertiary,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  ),
                 ),
-                keyboardType: TextInputType.number,
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: TextFormField(
-                controller: _carbsController,
-                decoration: const InputDecoration(
-                  labelText: 'Carbs',
-                  border: OutlineInputBorder(),
-                  suffixText: 'g',
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _userConfirmedCorrect = true;
+                      _showAlternatives = false;
+                    });
+                    _enterManually();
+                  },
+                  icon: const Icon(Icons.edit_rounded),
+                  label: const Text('Enter Manually'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  ),
                 ),
-                keyboardType: TextInputType.number,
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: TextFormField(
-                controller: _fatController,
-                decoration: const InputDecoration(
-                  labelText: 'Fat',
-                  border: OutlineInputBorder(),
-                  suffixText: 'g',
-                ),
-                keyboardType: TextInputType.number,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        
-        FilledButton(
-          onPressed: _saveFoodEntry,
-          child: const Text('Save Food Entry'),
-        ),
-        
-        if (result == null) ...[
-          const SizedBox(height: 16),
-          OutlinedButton(
-            onPressed: () => _startAnalysis(),
-            child: const Text('Analyze with AI'),
+            ],
           ),
         ],
-      ],
+      ),
+    );
+  }
+  
+  Widget _buildAlternativeOption(String option, ColorScheme colorScheme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: InkWell(
+        onTap: () => _selectAlternative(option),
+        borderRadius: AppRadius.medium,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceVariant.withOpacity(0.5),
+            borderRadius: AppRadius.medium,
+            border: Border.all(
+              color: colorScheme.outline.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.restaurant_rounded,
+                color: colorScheme.primary,
+                size: 20,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(
+                  option,
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: colorScheme.onSurfaceVariant,
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildModernNutritionForm(ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: AppRadius.extraLarge,
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withOpacity(0.1),
+                  borderRadius: AppRadius.small,
+                ),
+                child: Icon(
+                  Icons.restaurant_menu_rounded,
+                  color: colorScheme.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Text(
+                'Nutrition Details',
+                style: AppTextStyles.titleLarge.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          _buildFormField(
+            controller: _nameController,
+            label: 'Food Name',
+            icon: Icons.label_rounded,
+            colorScheme: colorScheme,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _buildFormField(
+            controller: _caloriesController,
+            label: 'Calories (kcal)',
+            icon: Icons.local_fire_department_rounded,
+            keyboardType: TextInputType.number,
+            colorScheme: colorScheme,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: _buildFormField(
+                  controller: _proteinController,
+                  label: 'Protein (g)',
+                  icon: Icons.fitness_center_rounded,
+                  keyboardType: TextInputType.number,
+                  colorScheme: colorScheme,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _buildFormField(
+                  controller: _carbsController,
+                  label: 'Carbs (g)',
+                  icon: Icons.grain_rounded,
+                  keyboardType: TextInputType.number,
+                  colorScheme: colorScheme,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _buildFormField(
+                  controller: _fatController,
+                  label: 'Fat (g)',
+                  icon: Icons.water_drop_rounded,
+                  keyboardType: TextInputType.number,
+                  colorScheme: colorScheme,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _saveFoodEntry,
+              icon: const Icon(Icons.save_rounded),
+              label: const Text('Save Food Entry'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppRadius.large,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildFormField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required ColorScheme colorScheme,
+    TextInputType? keyboardType,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      style: AppTextStyles.bodyLarge,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(
+          icon,
+          color: colorScheme.primary,
+          size: 20,
+        ),
+        filled: true,
+        fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
+        border: OutlineInputBorder(
+          borderRadius: AppRadius.medium,
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: AppRadius.medium,
+          borderSide: BorderSide(
+            color: colorScheme.outline.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: AppRadius.medium,
+          borderSide: BorderSide(
+            color: colorScheme.primary,
+            width: 2,
+          ),
+        ),
+        labelStyle: AppTextStyles.bodyMedium.copyWith(
+          color: colorScheme.onSurfaceVariant,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
+      ),
     );
   }
   
@@ -251,448 +924,320 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   
   void _updateFormFields(FoodAnalysis result) {
     _nameController.text = result.name;
-    _caloriesController.text = result.calories.toString();
-    _proteinController.text = result.protein.toString();
-    _carbsController.text = result.carbs.toString();
-    _fatController.text = result.fat.toString();
+    _caloriesController.text = result.calories.toStringAsFixed(0);
+    _proteinController.text = result.protein.toStringAsFixed(1);
+    _carbsController.text = result.carbs.toStringAsFixed(1);
+    _fatController.text = result.fat.toStringAsFixed(1);
     
-    // Show brief confirmation that fields were updated
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Form updated with corrected values'),
-          duration: Duration(seconds: 2),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              Icons.check_circle_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            const Text('Form updated with AI analysis'),
+          ],
         ),
-      );
-    }
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.medium,
+        ),
+        margin: const EdgeInsets.all(AppSpacing.md),
+      ),
+    );
   }
   
   void _retryAnalysis() {
+    ref.invalidate(foodAnalysisProvider);
     _startAnalysis();
   }
   
   void _enterManually() {
-    // Clear any error state and show the form
-    ref.invalidate(foodAnalysisProvider);
+    // Clear any existing form data and let user enter manually
+    _nameController.clear();
+    _caloriesController.clear();
+    _proteinController.clear();
+    _carbsController.clear();
+    _fatController.clear();
   }
   
-  Future<void> _saveFoodEntry() async {
+  void _saveFoodEntry() async {
     try {
-      // Convert image to base64
-      final bytes = await widget.imageFile.readAsBytes();
-      final base64Image = base64Encode(bytes);
-      
-      final analysisResult = ref.read(foodAnalysisProvider).value;
-      
       final entry = FoodEntry()
-        ..name = _nameController.text
-        ..imageBase64 = base64Image
+        ..name = _nameController.text.isNotEmpty ? _nameController.text : 'Unknown Food'
         ..calories = double.tryParse(_caloriesController.text) ?? 0
         ..protein = double.tryParse(_proteinController.text) ?? 0
         ..carbs = double.tryParse(_carbsController.text) ?? 0
         ..fat = double.tryParse(_fatController.text) ?? 0
         ..timestamp = DateTime.now()
-        ..mealType = analysisResult?.suggestedMealType ?? FoodEntry.suggestMealTypeByTime(DateTime.now())
-        ..foodGroups = analysisResult?.suggestedFoodGroups ?? []
-        ..cuisine = analysisResult?.suggestedCuisine ?? CuisineType.other
-        ..dietaryTags = analysisResult?.suggestedDietaryTags ?? []
-        ..portionSize = analysisResult?.portionSize
-        ..cookingMethod = analysisResult?.cookingMethod
-        ..detectedItems = analysisResult?.detectedItems?.map((item) => 
-          DetectedFoodItem.fromFoodItem(item)
-        ).toList() ?? []
-        ..aiProvider = ref.read(aiProviderManagerProvider).activeProvider?.providerId;
+        ..imageBase64 = '';
       
-      final dbService = ref.read(databaseServiceProvider);
-      await dbService.saveFoodEntry(entry);
+      await ref.read(databaseServiceProvider).saveFoodEntry(entry);
+      
+      // Reset camera state
+      ref.read(selectedImageProvider.notifier).state = null;
       
       if (mounted) {
-        // Reset camera and analysis state for new food entry
-        ref.read(selectedImageProvider.notifier).state = null;
-        ref.read(foodAnalysisProvider.notifier).reset();
-        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Food entry saved!'),
+            content: Row(
+              children: [
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                const Text('Food entry saved successfully!'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: AppRadius.medium,
+            ),
+            margin: const EdgeInsets.all(AppSpacing.md),
             action: SnackBarAction(
               label: 'Add Another',
+              textColor: Colors.white,
               onPressed: () {
-                context.go('/camera');
+                Navigator.of(context).popUntil((route) => route.isFirst);
+                context.push('/camera');
               },
             ),
           ),
         );
         
-        // Navigate back to home and then allow easy access to camera
-        context.go('/');
+        // Navigate back to home
+        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving entry: $e')),
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.error_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text('Error saving entry: $e'),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: AppRadius.medium,
+            ),
+            margin: const EdgeInsets.all(AppSpacing.md),
+          ),
         );
       }
     }
   }
-
-  Widget _buildAIConfirmationCard(FoodAnalysis result) {
-    return Card(
-      color: Theme.of(context).colorScheme.surfaceVariant,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.smart_toy,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'AI Detection: ${result.name}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Is this correct?',
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 16),
-            Column(
-              children: [
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        _userConfirmedCorrect = true;
-                      });
-                      // Update form fields with current analysis results
-                      final currentResult = ref.read(foodAnalysisProvider).value;
-                      if (currentResult != null) {
-                        _updateFormFields(currentResult);
-                      }
-                    },
-                    icon: const Icon(Icons.check),
-                    label: const Text('Looks Good'),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _showPartialCorrectionDialog(result),
-                    icon: const Icon(Icons.edit),
-                    label: const Text('Partially Correct'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.blue,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        _showAlternatives = true;
-                      });
-                    },
-                    icon: const Icon(Icons.close),
-                    label: const Text('Not Correct'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.orange,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (_showAlternatives) ...[
-              const SizedBox(height: 16),
-              _buildAlternativeSuggestions(),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAlternativeSuggestions() {
-    // Generate alternative food suggestions based on the image
-    final alternatives = _generateAlternatives();
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Select the correct food:',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        ...alternatives.map((alternative) => _buildAlternativeOption(alternative)),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => _showHintDialog(),
-                icon: const Icon(Icons.help_outline),
-                label: const Text('Help AI'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.blue,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  setState(() {
-                    _nameController.clear();
-                    _caloriesController.clear();
-                    _proteinController.clear();
-                    _carbsController.clear();
-                    _fatController.clear();
-                    _userConfirmedCorrect = true;
-                    _showAlternatives = false;
-                  });
-                },
-                icon: const Icon(Icons.edit),
-                label: const Text('Enter Manually'),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAlternativeOption(AlternativeFood alternative) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-        title: Text(alternative.name),
-        subtitle: Text('${alternative.calories} cal'),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () {
-          _selectAlternative(alternative);
-        },
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: BorderSide(color: Colors.grey.shade300),
-        ),
-      ),
-    );
-  }
-
-  void _selectAlternative(AlternativeFood alternative) {
-    setState(() {
-      _nameController.text = alternative.name;
-      _caloriesController.text = alternative.calories.toString();
-      _proteinController.text = alternative.protein.toString();
-      _carbsController.text = alternative.carbs.toString();
-      _fatController.text = alternative.fat.toString();
-      _userConfirmedCorrect = true;
-      _showAlternatives = false;
-    });
-  }
-
-  List<AlternativeFood> _generateAlternatives() {
-    final analysisResult = ref.read(foodAnalysisProvider).value;
-    final detectedName = analysisResult?.name.toLowerCase() ?? '';
-    
-    // Generate contextual alternatives based on the AI's guess
-    if (detectedName.contains('quinoa') || detectedName.contains('bowl')) {
-      // If AI detected quinoa bowl, suggest pasta alternatives
-      return [
-        AlternativeFood('Pasta with Tomato Sauce', 350, 12, 58, 8),
-        AlternativeFood('Spaghetti Marinara', 320, 11, 55, 6),
-        AlternativeFood('Penne Arrabbiata', 380, 13, 62, 9),
-        AlternativeFood('Pasta Bolognese', 420, 18, 55, 12),
-        AlternativeFood('Linguine with Red Sauce', 340, 12, 57, 7),
-      ];
-    } else if (detectedName.contains('pasta') || detectedName.contains('spaghetti')) {
-      // If AI detected pasta, suggest other pasta types and similar dishes
-      return [
-        AlternativeFood('Rice with Tomato Sauce', 280, 6, 45, 8),
-        AlternativeFood('Risotto with Tomatoes', 320, 8, 52, 10),
-        AlternativeFood('Pasta Salad', 290, 9, 48, 7),
-        AlternativeFood('Couscous with Vegetables', 240, 8, 42, 5),
-        AlternativeFood('Orzo with Marinara', 310, 10, 50, 8),
-      ];
-    } else if (detectedName.contains('chicken')) {
-      // If AI detected chicken, suggest other protein dishes
-      return [
-        AlternativeFood('Turkey Breast', 165, 30, 0, 3),
-        AlternativeFood('Salmon Fillet', 280, 25, 0, 18),
-        AlternativeFood('Pork Tenderloin', 190, 26, 0, 8),
-        AlternativeFood('Beef Sirloin', 220, 24, 0, 12),
-        AlternativeFood('Tofu Stir-fry', 150, 12, 8, 8),
-      ];
-    } else {
-      // Default common alternatives for unclear detections
-      return [
-        AlternativeFood('Mixed Salad', 120, 5, 15, 6),
-        AlternativeFood('Sandwich', 320, 15, 35, 12),
-        AlternativeFood('Soup', 180, 8, 20, 8),
-        AlternativeFood('Stir-fry Vegetables', 160, 6, 18, 8),
-        AlternativeFood('Rice Bowl', 280, 8, 45, 6),
-      ];
-    }
+  
+  void _selectAlternative(String alternative) {
+    // Create a mock result for the alternative and re-analyze
+    _reanalyzeWithHint(alternative);
   }
   
-  void _showHintDialog() {
+  List<String> _generateAlternatives(String detectedFood) {
+    final alternatives = <String>[];
+    final lower = detectedFood.toLowerCase();
+    
+    if (lower.contains('quinoa') || lower.contains('bowl')) {
+      alternatives.addAll([
+        'Rice Bowl',
+        'Grain Bowl',
+        'Buddha Bowl',
+        'Couscous Bowl',
+        'Farro Bowl',
+      ]);
+    } else if (lower.contains('pasta')) {
+      alternatives.addAll([
+        'Spaghetti',
+        'Penne',
+        'Fusilli',
+        'Linguine',
+        'Macaroni',
+      ]);
+    } else if (lower.contains('chicken')) {
+      alternatives.addAll([
+        'Grilled Chicken',
+        'Baked Chicken',
+        'Chicken Breast',
+        'Chicken Thigh',
+        'Fried Chicken',
+      ]);
+    } else {
+      alternatives.addAll([
+        'Mixed Salad',
+        'Vegetable Stir Fry',
+        'Sandwich',
+        'Soup',
+        'Pizza',
+      ]);
+    }
+    
+    return alternatives.take(4).toList();
+  }
+  
+  void _showHintDialog(FoodAnalysis originalResult) {
     final hintController = TextEditingController();
     
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Help AI Identify Your Food'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Describe what this food actually is:',
-                style: TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: hintController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'e.g., "This is porridge with berries and honey, not a Mediterranean bowl"',
-                  border: OutlineInputBorder(),
-                ),
-                autofocus: true,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'The AI will re-analyze the image with your description.',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.extraLarge,
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.help_outline_rounded,
+              color: Theme.of(context).colorScheme.tertiary,
             ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _reanalyzeWithHint(hintController.text);
-              },
-              child: const Text('Re-analyze'),
+            const SizedBox(width: AppSpacing.sm),
+            const Text('Help AI Identify'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Describe what the food actually is to help improve AI accuracy:',
+              style: AppTextStyles.bodyMedium,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: hintController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'e.g., "This is actually oatmeal with berries and honey"',
+                border: OutlineInputBorder(
+                  borderRadius: AppRadius.medium,
+                ),
+              ),
             ),
           ],
-        );
-      },
-    ).then((_) {
-      hintController.dispose();
-    });
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _reanalyzeWithHint(hintController.text);
+            },
+            child: const Text('Re-analyze'),
+          ),
+        ],
+      ),
+    );
   }
-
+  
   void _reanalyzeWithHint(String hint) {
-    if (hint.trim().isEmpty) return;
-    
     setState(() {
       _showAlternatives = false;
-      _userConfirmedCorrect = false;
     });
-    
-    // Re-analyze with hint
     ref.read(foodAnalysisProvider.notifier).analyzeImageWithHint(widget.imageFile, hint);
   }
-
-  void _showPartialCorrectionDialog(FoodAnalysis result) {
+  
+  void _showPartialCorrectionDialog(FoodAnalysis originalResult) {
     final correctionController = TextEditingController();
     
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Partially Correct'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'AI detected: ${result.name}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'What corrections should be made?',
-                style: TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: correctionController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'e.g., "It\'s porridge without fruits" or "Remove the cheese, add more vegetables"',
-                  border: OutlineInputBorder(),
-                ),
-                autofocus: true,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'The AI will adjust the nutrition information based on your correction.',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.extraLarge,
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.tune_rounded,
+              color: AppColors.carbsBlue,
             ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _reanalyzeWithPartialCorrection(result, correctionController.text);
-              },
-              child: const Text('Apply Correction'),
+            const SizedBox(width: AppSpacing.sm),
+            const Text('Partial Correction'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                borderRadius: AppRadius.medium,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'AI detected:',
+                    style: AppTextStyles.labelMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    originalResult.name,
+                    style: AppTextStyles.titleMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'What needs to be corrected?',
+              style: AppTextStyles.bodyMedium,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: correctionController,
+              maxLines: 2,
+              decoration: InputDecoration(
+                hintText: 'e.g., "without fruits" or "add more vegetables"',
+                border: OutlineInputBorder(
+                  borderRadius: AppRadius.medium,
+                ),
+              ),
             ),
           ],
-        );
-      },
-    ).then((_) {
-      correctionController.dispose();
-    });
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _reanalyzeWithPartialCorrection(originalResult, correctionController.text);
+            },
+            child: const Text('Apply Correction'),
+          ),
+        ],
+      ),
+    );
   }
-
+  
   void _reanalyzeWithPartialCorrection(FoodAnalysis originalResult, String correction) {
-    if (correction.trim().isEmpty) return;
-    
-    setState(() {
-      _showAlternatives = false;
-      _userConfirmedCorrect = false;
-    });
-    
-    // Create a more specific hint for partial corrections
-    final partialHint = 'The AI detected "${originalResult.name}" but this needs correction: $correction. Please adjust the nutrition information accordingly.';
-    
-    // Re-analyze with the partial correction hint
-    ref.read(foodAnalysisProvider.notifier).analyzeImageWithHint(widget.imageFile, partialHint);
+    final hint = '${originalResult.name}, but $correction';
+    _reanalyzeWithHint(hint);
   }
-}
-
-class AlternativeFood {
-  final String name;
-  final double calories;
-  final double protein;
-  final double carbs;
-  final double fat;
-
-  AlternativeFood(this.name, this.calories, this.protein, this.carbs, this.fat);
 }
