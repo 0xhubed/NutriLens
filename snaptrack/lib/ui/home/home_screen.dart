@@ -5,6 +5,7 @@ import 'dart:math' as math;
 
 import '../../core/theme/app_theme.dart';
 import '../../data/models/daily_nutrition.dart';
+import '../../data/providers/activity_providers.dart';
 import '../../data/providers/nutrition_providers.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -30,6 +31,8 @@ class HomeScreen extends ConsumerWidget {
                 _buildQuickActions(context, colorScheme),
                 const SizedBox(height: AppSpacing.lg),
                 _buildDailySummaryCard(todayNutrition, colorScheme),
+                const SizedBox(height: AppSpacing.lg),
+                _buildBalancePreview(context, colorScheme),
                 const SizedBox(height: AppSpacing.lg),
                 _buildRecentActivity(context, colorScheme),
                 const SizedBox(height: AppSpacing.xxxl),
@@ -78,16 +81,23 @@ class HomeScreen extends ConsumerWidget {
       actions: [
         _buildAppBarAction(
           context,
-          Icons.analytics_outlined,
-          'Analytics',
-          () => context.push('/analytics'),
+          Icons.balance_rounded,
+          'Balance',
+          () => context.push('/balance'),
           colorScheme,
         ),
         _buildAppBarAction(
           context,
-          Icons.library_books_outlined,
-          'Templates',
-          () => context.push('/templates'),
+          Icons.fitness_center_outlined,
+          'Activity',
+          () => context.push('/activity'),
+          colorScheme,
+        ),
+        _buildAppBarAction(
+          context,
+          Icons.analytics_outlined,
+          'Analytics',
+          () => context.push('/analytics'),
           colorScheme,
         ),
         _buildAppBarAction(
@@ -551,6 +561,193 @@ class HomeScreen extends ConsumerWidget {
     );
   }
   
+  Widget _buildBalancePreview(BuildContext context, ColorScheme colorScheme) {
+    final balanceAsync = ref.watch(dailyCalorieBalanceProvider);
+    
+    return Card(
+      elevation: 0,
+      color: colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.large,
+        side: BorderSide(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: () => context.push('/balance'),
+        borderRadius: AppRadius.large,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Energy Balance',
+                    style: AppTextStyles.headlineMedium.copyWith(
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 16,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              balanceAsync.when(
+                data: (balance) => _buildBalanceContent(balance, colorScheme),
+                loading: () => _buildBalanceLoading(colorScheme),
+                error: (_, __) => _buildBalanceError(colorScheme),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBalanceContent(CalorieBalance balance, ColorScheme colorScheme) {
+    final isDeficit = balance.isDeficit;
+    final isBalanced = balance.isBalanced;
+    final color = isBalanced
+        ? AppColors.primaryGreen
+        : isDeficit
+            ? AppColors.carbsBlue
+            : AppColors.secondaryOrange;
+    
+    final icon = isBalanced
+        ? Icons.balance_rounded
+        : isDeficit
+            ? Icons.trending_down_rounded
+            : Icons.trending_up_rounded;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.1),
+            color.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: AppRadius.medium,
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: AppRadius.small,
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  balance.balanceLabel,
+                  style: AppTextStyles.titleLarge.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  balance.formattedBalance,
+                  style: AppTextStyles.displaySmall.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _buildBalanceStatItem(
+                'Food',
+                '+${balance.foodIntake.toStringAsFixed(0)}',
+                AppColors.primaryGreen,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              _buildBalanceStatItem(
+                'Activity',
+                '-${balance.activityBurn.toStringAsFixed(0)}',
+                AppColors.proteinPurple,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBalanceStatItem(String label, String value, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          value,
+          style: AppTextStyles.labelLarge.copyWith(
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Text(
+          label,
+          style: AppTextStyles.labelSmall.copyWith(
+            color: color.withOpacity(0.7),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBalanceLoading(ColorScheme colorScheme) {
+    return Container(
+      height: 80,
+      child: Center(
+        child: CircularProgressIndicator(
+          color: colorScheme.primary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBalanceError(ColorScheme colorScheme) {
+    return Container(
+      height: 80,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Center(
+        child: Text(
+          'Unable to load balance data',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: colorScheme.error,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildRecentActivity(BuildContext context, ColorScheme colorScheme) {
     return Card(
       elevation: 0,
@@ -760,6 +957,18 @@ class HomeScreen extends ConsumerWidget {
               () {
                 Navigator.pop(context);
                 context.push('/templates/select');
+              },
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _buildBottomSheetOption(
+              context,
+              'Log Activity',
+              'Track your exercise and workouts',
+              Icons.fitness_center_rounded,
+              AppColors.proteinPurple,
+              () {
+                Navigator.pop(context);
+                context.push('/activity');
               },
             ),
             const SizedBox(height: AppSpacing.md),

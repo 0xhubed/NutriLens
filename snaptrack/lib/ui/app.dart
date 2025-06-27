@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_theme.dart';
+import 'activity/activity_form_screen.dart';
+import 'activity/activity_logger_screen.dart';
+import 'activity/balance_dashboard_screen.dart';
 import 'analytics/analytics_screen.dart';
 import 'camera/camera_screen.dart';
 import 'history/history_screen.dart';
@@ -55,6 +58,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/templates/select',
         name: 'templateSelect',
         builder: (context, state) => const TemplateSelectionScreen(),
+      ),
+      GoRoute(
+        path: '/activity',
+        name: 'activity',
+        builder: (context, state) => const ActivityLoggerScreen(),
+      ),
+      GoRoute(
+        path: '/activity/log/:activityName',
+        name: 'activityForm',
+        builder: (context, state) {
+          final activityName = state.pathParameters['activityName']!;
+          return ActivityFormScreen(activityName: activityName);
+        },
+      ),
+      GoRoute(
+        path: '/balance',
+        name: 'balance',
+        builder: (context, state) => const BalanceDashboardScreen(),
       ),
     ],
   );
