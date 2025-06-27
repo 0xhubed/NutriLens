@@ -107,6 +107,18 @@ unlinked_spec.ds
 # Coverage
 coverage/
 
+# Flutter SDK and related downloads
+flutter/
+flutter_*.tar.xz
+*.tar.xz
+
+# Project specific
+plans/
+
+# Markdown files (except README.md)
+*.md
+!README.md
+
 # Symbols
 app.*.symbols
 

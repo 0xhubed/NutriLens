@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(flutter create:*)",
+      "Bash(find:*)",
+      "Bash(rm:*)",
+      "Bash(wget:*)",
+      "Bash(snap list:*)",
+      "Bash(tar:*)",
+      "Bash(export PATH=\"$PATH:/home/hubed/projects/nutriLens/flutter/bin\")",
+      "Bash(flutter:*)",
+      "Bash(sudo apt:*)",
+      "Bash(sudo apt install:*)",
+      "Bash(dart run:*)",
+      "Bash(pkg-config:*)",
+      "Bash(grep:*)",
+      "Bash(./build/linux/x64/release/bundle/snaptrack)",
+      "Bash(pkill:*)",
+      "Bash(dart pub run:*)",
+      "Bash(/home/hubed/projects/nutriLens/flutter/bin/flutter pub run build_runner build --delete-conflicting-outputs)",
+      "Bash(/home/hubed/projects/nutriLens/flutter/bin/flutter build linux)",
+      "Bash(chmod:*)",
+      "Bash(/home/hubed/projects/nutriLens/flutter/bin/flutter pub get)",
+      "Bash(ls:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}
