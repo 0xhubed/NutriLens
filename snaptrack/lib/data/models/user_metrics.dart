@@ -76,12 +76,15 @@ class UserMetrics {
     this.waterLiters,
     this.sleepHours,
     this.stepCount,
-    this.bodyMeasurements,
+    Map<String, double>? bodyMeasurements,
     this.dailyCalorieGoal,
     this.dailyWaterGoal,
     this.dailyStepGoal,
     this.notes,
   }) {
+    if (bodyMeasurements != null) {
+      this.bodyMeasurements = bodyMeasurements;
+    }
     _calculateDerivedMetrics();
   }
   

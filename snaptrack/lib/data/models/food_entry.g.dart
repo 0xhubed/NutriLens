@@ -60,65 +60,131 @@ const FoodEntrySchema = CollectionSchema(
       type: IsarType.byteList,
       enumMap: _FoodEntrydietaryTagsEnumValueMap,
     ),
-    r'estimatedWeight': PropertySchema(
+    r'effectiveCalories': PropertySchema(
       id: 8,
+      name: r'effectiveCalories',
+      type: IsarType.double,
+    ),
+    r'effectiveCarbs': PropertySchema(
+      id: 9,
+      name: r'effectiveCarbs',
+      type: IsarType.double,
+    ),
+    r'effectiveFat': PropertySchema(
+      id: 10,
+      name: r'effectiveFat',
+      type: IsarType.double,
+    ),
+    r'effectiveProtein': PropertySchema(
+      id: 11,
+      name: r'effectiveProtein',
+      type: IsarType.double,
+    ),
+    r'effectiveWeight': PropertySchema(
+      id: 12,
+      name: r'effectiveWeight',
+      type: IsarType.double,
+    ),
+    r'estimatedWeight': PropertySchema(
+      id: 13,
       name: r'estimatedWeight',
       type: IsarType.double,
     ),
     r'fat': PropertySchema(
-      id: 9,
+      id: 14,
       name: r'fat',
       type: IsarType.double,
     ),
     r'foodGroups': PropertySchema(
-      id: 10,
+      id: 15,
       name: r'foodGroups',
       type: IsarType.byteList,
       enumMap: _FoodEntryfoodGroupsEnumValueMap,
     ),
     r'imageBase64': PropertySchema(
-      id: 11,
+      id: 16,
       name: r'imageBase64',
       type: IsarType.string,
     ),
     r'mealType': PropertySchema(
-      id: 12,
+      id: 17,
       name: r'mealType',
       type: IsarType.byte,
       enumMap: _FoodEntrymealTypeEnumValueMap,
     ),
     r'name': PropertySchema(
-      id: 13,
+      id: 18,
       name: r'name',
       type: IsarType.string,
     ),
     r'notes': PropertySchema(
-      id: 14,
+      id: 19,
       name: r'notes',
       type: IsarType.string,
     ),
+    r'portionCalories': PropertySchema(
+      id: 20,
+      name: r'portionCalories',
+      type: IsarType.double,
+    ),
+    r'portionCarbs': PropertySchema(
+      id: 21,
+      name: r'portionCarbs',
+      type: IsarType.double,
+    ),
+    r'portionFat': PropertySchema(
+      id: 22,
+      name: r'portionFat',
+      type: IsarType.double,
+    ),
+    r'portionProtein': PropertySchema(
+      id: 23,
+      name: r'portionProtein',
+      type: IsarType.double,
+    ),
     r'portionSize': PropertySchema(
-      id: 15,
+      id: 24,
       name: r'portionSize',
       type: IsarType.string,
     ),
+    r'portionSummary': PropertySchema(
+      id: 25,
+      name: r'portionSummary',
+      type: IsarType.string,
+    ),
+    r'portions': PropertySchema(
+      id: 26,
+      name: r'portions',
+      type: IsarType.objectList,
+      target: r'FoodPortion',
+    ),
     r'protein': PropertySchema(
-      id: 16,
+      id: 27,
       name: r'protein',
       type: IsarType.double,
     ),
     r'timestamp': PropertySchema(
-      id: 17,
+      id: 28,
       name: r'timestamp',
       type: IsarType.dateTime,
     ),
     r'totalMacros': PropertySchema(
-      id: 18,
+      id: 29,
       name: r'totalMacros',
       type: IsarType.double,
     ),
+    r'totalPortionWeight': PropertySchema(
+      id: 30,
+      name: r'totalPortionWeight',
+      type: IsarType.double,
+    ),
+    r'usePortions': PropertySchema(
+      id: 31,
+      name: r'usePortions',
+      type: IsarType.bool,
+    ),
     r'userWeight': PropertySchema(
-      id: 19,
+      id: 32,
       name: r'userWeight',
       type: IsarType.double,
     )
@@ -130,7 +196,10 @@ const FoodEntrySchema = CollectionSchema(
   idName: r'id',
   indexes: {},
   links: {},
-  embeddedSchemas: {r'DetectedFoodItem': DetectedFoodItemSchema},
+  embeddedSchemas: {
+    r'DetectedFoodItem': DetectedFoodItemSchema,
+    r'FoodPortion': FoodPortionSchema
+  },
   getId: _foodEntryGetId,
   getLinks: _foodEntryGetLinks,
   attach: _foodEntryAttach,
@@ -180,6 +249,15 @@ int _foodEntryEstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
+  bytesCount += 3 + object.portionSummary.length * 3;
+  bytesCount += 3 + object.portions.length * 3;
+  {
+    final offsets = allOffsets[FoodPortion]!;
+    for (var i = 0; i < object.portions.length; i++) {
+      final value = object.portions[i];
+      bytesCount += FoodPortionSchema.estimateSize(value, offsets, allOffsets);
+    }
+  }
   return bytesCount;
 }
 
@@ -203,19 +281,37 @@ void _foodEntrySerialize(
   );
   writer.writeByteList(
       offsets[7], object.dietaryTags.map((e) => e.index).toList());
-  writer.writeDouble(offsets[8], object.estimatedWeight);
-  writer.writeDouble(offsets[9], object.fat);
+  writer.writeDouble(offsets[8], object.effectiveCalories);
+  writer.writeDouble(offsets[9], object.effectiveCarbs);
+  writer.writeDouble(offsets[10], object.effectiveFat);
+  writer.writeDouble(offsets[11], object.effectiveProtein);
+  writer.writeDouble(offsets[12], object.effectiveWeight);
+  writer.writeDouble(offsets[13], object.estimatedWeight);
+  writer.writeDouble(offsets[14], object.fat);
   writer.writeByteList(
-      offsets[10], object.foodGroups.map((e) => e.index).toList());
-  writer.writeString(offsets[11], object.imageBase64);
-  writer.writeByte(offsets[12], object.mealType.index);
-  writer.writeString(offsets[13], object.name);
-  writer.writeString(offsets[14], object.notes);
-  writer.writeString(offsets[15], object.portionSize);
-  writer.writeDouble(offsets[16], object.protein);
-  writer.writeDateTime(offsets[17], object.timestamp);
-  writer.writeDouble(offsets[18], object.totalMacros);
-  writer.writeDouble(offsets[19], object.userWeight);
+      offsets[15], object.foodGroups.map((e) => e.index).toList());
+  writer.writeString(offsets[16], object.imageBase64);
+  writer.writeByte(offsets[17], object.mealType.index);
+  writer.writeString(offsets[18], object.name);
+  writer.writeString(offsets[19], object.notes);
+  writer.writeDouble(offsets[20], object.portionCalories);
+  writer.writeDouble(offsets[21], object.portionCarbs);
+  writer.writeDouble(offsets[22], object.portionFat);
+  writer.writeDouble(offsets[23], object.portionProtein);
+  writer.writeString(offsets[24], object.portionSize);
+  writer.writeString(offsets[25], object.portionSummary);
+  writer.writeObjectList<FoodPortion>(
+    offsets[26],
+    allOffsets,
+    FoodPortionSchema.serialize,
+    object.portions,
+  );
+  writer.writeDouble(offsets[27], object.protein);
+  writer.writeDateTime(offsets[28], object.timestamp);
+  writer.writeDouble(offsets[29], object.totalMacros);
+  writer.writeDouble(offsets[30], object.totalPortionWeight);
+  writer.writeBool(offsets[31], object.usePortions);
+  writer.writeDouble(offsets[32], object.userWeight);
 }
 
 FoodEntry _foodEntryDeserialize(
@@ -245,25 +341,33 @@ FoodEntry _foodEntryDeserialize(
               _FoodEntrydietaryTagsValueEnumMap[e] ?? DietaryTag.vegetarian)
           .toList() ??
       [];
-  object.estimatedWeight = reader.readDoubleOrNull(offsets[8]);
-  object.fat = reader.readDouble(offsets[9]);
+  object.estimatedWeight = reader.readDoubleOrNull(offsets[13]);
+  object.fat = reader.readDouble(offsets[14]);
   object.foodGroups = reader
-          .readByteList(offsets[10])
+          .readByteList(offsets[15])
           ?.map(
               (e) => _FoodEntryfoodGroupsValueEnumMap[e] ?? FoodGroup.proteins)
           .toList() ??
       [];
   object.id = id;
-  object.imageBase64 = reader.readString(offsets[11]);
+  object.imageBase64 = reader.readString(offsets[16]);
   object.mealType =
-      _FoodEntrymealTypeValueEnumMap[reader.readByteOrNull(offsets[12])] ??
+      _FoodEntrymealTypeValueEnumMap[reader.readByteOrNull(offsets[17])] ??
           MealType.breakfast;
-  object.name = reader.readString(offsets[13]);
-  object.notes = reader.readStringOrNull(offsets[14]);
-  object.portionSize = reader.readStringOrNull(offsets[15]);
-  object.protein = reader.readDouble(offsets[16]);
-  object.timestamp = reader.readDateTime(offsets[17]);
-  object.userWeight = reader.readDoubleOrNull(offsets[19]);
+  object.name = reader.readString(offsets[18]);
+  object.notes = reader.readStringOrNull(offsets[19]);
+  object.portionSize = reader.readStringOrNull(offsets[24]);
+  object.portions = reader.readObjectList<FoodPortion>(
+        offsets[26],
+        FoodPortionSchema.deserialize,
+        allOffsets,
+        FoodPortion(),
+      ) ??
+      [];
+  object.protein = reader.readDouble(offsets[27]);
+  object.timestamp = reader.readDateTime(offsets[28]);
+  object.usePortions = reader.readBool(offsets[31]);
+  object.userWeight = reader.readDoubleOrNull(offsets[32]);
   return object;
 }
 
@@ -303,34 +407,66 @@ P _foodEntryDeserializeProp<P>(
               .toList() ??
           []) as P;
     case 8:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 9:
       return (reader.readDouble(offset)) as P;
     case 10:
+      return (reader.readDouble(offset)) as P;
+    case 11:
+      return (reader.readDouble(offset)) as P;
+    case 12:
+      return (reader.readDouble(offset)) as P;
+    case 13:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 14:
+      return (reader.readDouble(offset)) as P;
+    case 15:
       return (reader
               .readByteList(offset)
               ?.map((e) =>
                   _FoodEntryfoodGroupsValueEnumMap[e] ?? FoodGroup.proteins)
               .toList() ??
           []) as P;
-    case 11:
+    case 16:
       return (reader.readString(offset)) as P;
-    case 12:
+    case 17:
       return (_FoodEntrymealTypeValueEnumMap[reader.readByteOrNull(offset)] ??
           MealType.breakfast) as P;
-    case 13:
-      return (reader.readString(offset)) as P;
-    case 14:
-      return (reader.readStringOrNull(offset)) as P;
-    case 15:
-      return (reader.readStringOrNull(offset)) as P;
-    case 16:
-      return (reader.readDouble(offset)) as P;
-    case 17:
-      return (reader.readDateTime(offset)) as P;
     case 18:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 19:
+      return (reader.readStringOrNull(offset)) as P;
+    case 20:
+      return (reader.readDouble(offset)) as P;
+    case 21:
+      return (reader.readDouble(offset)) as P;
+    case 22:
+      return (reader.readDouble(offset)) as P;
+    case 23:
+      return (reader.readDouble(offset)) as P;
+    case 24:
+      return (reader.readStringOrNull(offset)) as P;
+    case 25:
+      return (reader.readString(offset)) as P;
+    case 26:
+      return (reader.readObjectList<FoodPortion>(
+            offset,
+            FoodPortionSchema.deserialize,
+            allOffsets,
+            FoodPortion(),
+          ) ??
+          []) as P;
+    case 27:
+      return (reader.readDouble(offset)) as P;
+    case 28:
+      return (reader.readDateTime(offset)) as P;
+    case 29:
+      return (reader.readDouble(offset)) as P;
+    case 30:
+      return (reader.readDouble(offset)) as P;
+    case 31:
+      return (reader.readBool(offset)) as P;
+    case 32:
       return (reader.readDoubleOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1276,6 +1412,334 @@ extension FoodEntryQueryFilter
   }
 
   QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveCaloriesEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'effectiveCalories',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveCaloriesGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'effectiveCalories',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveCaloriesLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'effectiveCalories',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveCaloriesBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'effectiveCalories',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveCarbsEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'effectiveCarbs',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveCarbsGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'effectiveCarbs',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveCarbsLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'effectiveCarbs',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveCarbsBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'effectiveCarbs',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition> effectiveFatEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'effectiveFat',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveFatGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'effectiveFat',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveFatLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'effectiveFat',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition> effectiveFatBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'effectiveFat',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveProteinEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'effectiveProtein',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveProteinGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'effectiveProtein',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveProteinLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'effectiveProtein',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveProteinBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'effectiveProtein',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveWeightEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'effectiveWeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveWeightGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'effectiveWeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveWeightLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'effectiveWeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      effectiveWeightBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'effectiveWeight',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
       estimatedWeightIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -2083,6 +2547,265 @@ extension FoodEntryQueryFilter
   }
 
   QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionCaloriesEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'portionCalories',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionCaloriesGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'portionCalories',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionCaloriesLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'portionCalories',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionCaloriesBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'portionCalories',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition> portionCarbsEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'portionCarbs',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionCarbsGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'portionCarbs',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionCarbsLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'portionCarbs',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition> portionCarbsBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'portionCarbs',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition> portionFatEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'portionFat',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionFatGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'portionFat',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition> portionFatLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'portionFat',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition> portionFatBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'portionFat',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionProteinEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'portionProtein',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionProteinGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'portionProtein',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionProteinLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'portionProtein',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionProteinBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'portionProtein',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
       portionSizeIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -2231,6 +2954,230 @@ extension FoodEntryQueryFilter
         property: r'portionSize',
         value: '',
       ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionSummaryEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'portionSummary',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionSummaryGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'portionSummary',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionSummaryLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'portionSummary',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionSummaryBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'portionSummary',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionSummaryStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'portionSummary',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionSummaryEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'portionSummary',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionSummaryContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'portionSummary',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionSummaryMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'portionSummary',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionSummaryIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'portionSummary',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionSummaryIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'portionSummary',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionsLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'portions',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition> portionsIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'portions',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionsIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'portions',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionsLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'portions',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionsLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'portions',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      portionsLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'portions',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
     });
   }
 
@@ -2413,6 +3360,82 @@ extension FoodEntryQueryFilter
     });
   }
 
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      totalPortionWeightEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'totalPortionWeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      totalPortionWeightGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'totalPortionWeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      totalPortionWeightLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'totalPortionWeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition>
+      totalPortionWeightBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'totalPortionWeight',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition> usePortionsEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'usePortions',
+        value: value,
+      ));
+    });
+  }
+
   QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition> userWeightIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -2502,6 +3525,13 @@ extension FoodEntryQueryObject
       return query.object(q, r'detectedItems');
     });
   }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterFilterCondition> portionsElement(
+      FilterQuery<FoodPortion> q) {
+    return QueryBuilder.apply(this, (query) {
+      return query.object(q, r'portions');
+    });
+  }
 }
 
 extension FoodEntryQueryLinks
@@ -2580,6 +3610,68 @@ extension FoodEntryQuerySortBy on QueryBuilder<FoodEntry, FoodEntry, QSortBy> {
     });
   }
 
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByEffectiveCalories() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveCalories', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy>
+      sortByEffectiveCaloriesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveCalories', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByEffectiveCarbs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveCarbs', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByEffectiveCarbsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveCarbs', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByEffectiveFat() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveFat', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByEffectiveFatDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveFat', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByEffectiveProtein() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveProtein', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy>
+      sortByEffectiveProteinDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveProtein', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByEffectiveWeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveWeight', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByEffectiveWeightDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveWeight', Sort.desc);
+    });
+  }
+
   QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByEstimatedWeight() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'estimatedWeight', Sort.asc);
@@ -2652,6 +3744,54 @@ extension FoodEntryQuerySortBy on QueryBuilder<FoodEntry, FoodEntry, QSortBy> {
     });
   }
 
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByPortionCalories() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionCalories', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByPortionCaloriesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionCalories', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByPortionCarbs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionCarbs', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByPortionCarbsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionCarbs', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByPortionFat() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionFat', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByPortionFatDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionFat', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByPortionProtein() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionProtein', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByPortionProteinDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionProtein', Sort.desc);
+    });
+  }
+
   QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByPortionSize() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'portionSize', Sort.asc);
@@ -2661,6 +3801,18 @@ extension FoodEntryQuerySortBy on QueryBuilder<FoodEntry, FoodEntry, QSortBy> {
   QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByPortionSizeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'portionSize', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByPortionSummary() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionSummary', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByPortionSummaryDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionSummary', Sort.desc);
     });
   }
 
@@ -2697,6 +3849,31 @@ extension FoodEntryQuerySortBy on QueryBuilder<FoodEntry, FoodEntry, QSortBy> {
   QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByTotalMacrosDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'totalMacros', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByTotalPortionWeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalPortionWeight', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy>
+      sortByTotalPortionWeightDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalPortionWeight', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByUsePortions() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'usePortions', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> sortByUsePortionsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'usePortions', Sort.desc);
     });
   }
 
@@ -2787,6 +3964,68 @@ extension FoodEntryQuerySortThenBy
     });
   }
 
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByEffectiveCalories() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveCalories', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy>
+      thenByEffectiveCaloriesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveCalories', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByEffectiveCarbs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveCarbs', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByEffectiveCarbsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveCarbs', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByEffectiveFat() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveFat', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByEffectiveFatDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveFat', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByEffectiveProtein() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveProtein', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy>
+      thenByEffectiveProteinDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveProtein', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByEffectiveWeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveWeight', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByEffectiveWeightDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveWeight', Sort.desc);
+    });
+  }
+
   QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByEstimatedWeight() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'estimatedWeight', Sort.asc);
@@ -2871,6 +4110,54 @@ extension FoodEntryQuerySortThenBy
     });
   }
 
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByPortionCalories() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionCalories', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByPortionCaloriesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionCalories', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByPortionCarbs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionCarbs', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByPortionCarbsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionCarbs', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByPortionFat() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionFat', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByPortionFatDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionFat', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByPortionProtein() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionProtein', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByPortionProteinDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionProtein', Sort.desc);
+    });
+  }
+
   QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByPortionSize() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'portionSize', Sort.asc);
@@ -2880,6 +4167,18 @@ extension FoodEntryQuerySortThenBy
   QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByPortionSizeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'portionSize', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByPortionSummary() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionSummary', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByPortionSummaryDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'portionSummary', Sort.desc);
     });
   }
 
@@ -2916,6 +4215,31 @@ extension FoodEntryQuerySortThenBy
   QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByTotalMacrosDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'totalMacros', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByTotalPortionWeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalPortionWeight', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy>
+      thenByTotalPortionWeightDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'totalPortionWeight', Sort.desc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByUsePortions() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'usePortions', Sort.asc);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QAfterSortBy> thenByUsePortionsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'usePortions', Sort.desc);
     });
   }
 
@@ -2979,6 +4303,36 @@ extension FoodEntryQueryWhereDistinct
     });
   }
 
+  QueryBuilder<FoodEntry, FoodEntry, QDistinct> distinctByEffectiveCalories() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'effectiveCalories');
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QDistinct> distinctByEffectiveCarbs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'effectiveCarbs');
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QDistinct> distinctByEffectiveFat() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'effectiveFat');
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QDistinct> distinctByEffectiveProtein() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'effectiveProtein');
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QDistinct> distinctByEffectiveWeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'effectiveWeight');
+    });
+  }
+
   QueryBuilder<FoodEntry, FoodEntry, QDistinct> distinctByEstimatedWeight() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'estimatedWeight');
@@ -3024,10 +4378,42 @@ extension FoodEntryQueryWhereDistinct
     });
   }
 
+  QueryBuilder<FoodEntry, FoodEntry, QDistinct> distinctByPortionCalories() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'portionCalories');
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QDistinct> distinctByPortionCarbs() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'portionCarbs');
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QDistinct> distinctByPortionFat() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'portionFat');
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QDistinct> distinctByPortionProtein() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'portionProtein');
+    });
+  }
+
   QueryBuilder<FoodEntry, FoodEntry, QDistinct> distinctByPortionSize(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'portionSize', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QDistinct> distinctByPortionSummary(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'portionSummary',
+          caseSensitive: caseSensitive);
     });
   }
 
@@ -3046,6 +4432,18 @@ extension FoodEntryQueryWhereDistinct
   QueryBuilder<FoodEntry, FoodEntry, QDistinct> distinctByTotalMacros() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'totalMacros');
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QDistinct> distinctByTotalPortionWeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'totalPortionWeight');
+    });
+  }
+
+  QueryBuilder<FoodEntry, FoodEntry, QDistinct> distinctByUsePortions() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'usePortions');
     });
   }
 
@@ -3114,6 +4512,37 @@ extension FoodEntryQueryProperty
     });
   }
 
+  QueryBuilder<FoodEntry, double, QQueryOperations>
+      effectiveCaloriesProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'effectiveCalories');
+    });
+  }
+
+  QueryBuilder<FoodEntry, double, QQueryOperations> effectiveCarbsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'effectiveCarbs');
+    });
+  }
+
+  QueryBuilder<FoodEntry, double, QQueryOperations> effectiveFatProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'effectiveFat');
+    });
+  }
+
+  QueryBuilder<FoodEntry, double, QQueryOperations> effectiveProteinProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'effectiveProtein');
+    });
+  }
+
+  QueryBuilder<FoodEntry, double, QQueryOperations> effectiveWeightProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'effectiveWeight');
+    });
+  }
+
   QueryBuilder<FoodEntry, double?, QQueryOperations> estimatedWeightProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'estimatedWeight');
@@ -3157,9 +4586,46 @@ extension FoodEntryQueryProperty
     });
   }
 
+  QueryBuilder<FoodEntry, double, QQueryOperations> portionCaloriesProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'portionCalories');
+    });
+  }
+
+  QueryBuilder<FoodEntry, double, QQueryOperations> portionCarbsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'portionCarbs');
+    });
+  }
+
+  QueryBuilder<FoodEntry, double, QQueryOperations> portionFatProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'portionFat');
+    });
+  }
+
+  QueryBuilder<FoodEntry, double, QQueryOperations> portionProteinProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'portionProtein');
+    });
+  }
+
   QueryBuilder<FoodEntry, String?, QQueryOperations> portionSizeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'portionSize');
+    });
+  }
+
+  QueryBuilder<FoodEntry, String, QQueryOperations> portionSummaryProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'portionSummary');
+    });
+  }
+
+  QueryBuilder<FoodEntry, List<FoodPortion>, QQueryOperations>
+      portionsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'portions');
     });
   }
 
@@ -3178,6 +4644,19 @@ extension FoodEntryQueryProperty
   QueryBuilder<FoodEntry, double, QQueryOperations> totalMacrosProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'totalMacros');
+    });
+  }
+
+  QueryBuilder<FoodEntry, double, QQueryOperations>
+      totalPortionWeightProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'totalPortionWeight');
+    });
+  }
+
+  QueryBuilder<FoodEntry, bool, QQueryOperations> usePortionsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'usePortions');
     });
   }
 

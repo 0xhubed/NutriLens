@@ -6,7 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/models/activity_entry.dart';
 import '../../data/providers/activity_providers.dart';
 import '../../data/services/activity_database.dart';
-import '../../data/services/activity_service.dart';
+import '../../data/services/activity_service.dart' hide activityServiceProvider;
 
 class ActivityFormScreen extends ConsumerStatefulWidget {
   final String activityName;

@@ -29,9 +29,10 @@ class MetricsService {
 
   Future<UserMetrics?> getMetricsForDate(DateTime date) async {
     final dateOnly = DateTime(date.year, date.month, date.day);
+    final endOfDay = dateOnly.add(const Duration(days: 1));
     return await isar.userMetrics
-        .where()
-        .dateEqualTo(dateOnly)
+        .filter()
+        .dateBetween(dateOnly, endOfDay)
         .findFirst();
   }
 
@@ -54,9 +55,10 @@ class MetricsService {
     final today = DateTime.now();
     final dateOnly = DateTime(today.year, today.month, today.day);
     
+    final endOfDay = dateOnly.add(const Duration(days: 1));
     return isar.userMetrics
-        .where()
-        .dateEqualTo(dateOnly)
+        .filter()
+        .dateBetween(dateOnly, endOfDay)
         .watch(fireImmediately: true)
         .map((list) => list.isEmpty ? null : list.first);
   }

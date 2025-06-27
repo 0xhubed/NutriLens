@@ -80,6 +80,14 @@ class AIProviderManager {
   }
 
   Future<FoodAnalysis> analyzeWithFallback(File imageFile, {String? userHint}) async {
+    return analyzeWithPortionsAndFallback(imageFile, userHint: userHint, requestPortions: false);
+  }
+
+  Future<FoodAnalysis> analyzeWithPortionsAndFallback(
+    File imageFile, {
+    String? userHint,
+    bool requestPortions = true,
+  }) async {
     final active = activeProvider;
     if (active == null) {
       throw AIProviderException('No active provider configured');
@@ -88,7 +96,11 @@ class AIProviderManager {
     try {
       // Try primary provider first
       if (await active.validateConfiguration()) {
-        return await active.analyzeImage(imageFile, userHint: userHint);
+        return await active.analyzeImageWithPortions(
+          imageFile,
+          userHint: userHint,
+          requestPortions: requestPortions,
+        );
       } else {
         throw AIProviderException('Active provider not configured', provider: active);
       }
@@ -98,7 +110,11 @@ class AIProviderManager {
       if (fallback != null && fallback.providerId != active.providerId) {
         try {
           if (await fallback.validateConfiguration()) {
-            return await fallback.analyzeImage(imageFile, userHint: userHint);
+            return await fallback.analyzeImageWithPortions(
+              imageFile,
+              userHint: userHint,
+              requestPortions: requestPortions,
+            );
           }
         } catch (fallbackError) {
           // Both failed, throw original error with fallback info

@@ -12,9 +12,9 @@ import 'data/models/meal_template.dart';
 import 'data/models/user_metrics.dart';
 import 'data/providers/activity_providers.dart';
 import 'data/providers/metrics_providers.dart';
-import 'data/services/activity_service.dart';
+import 'data/services/activity_service.dart' hide activityServiceProvider;
 import 'data/services/database_service.dart';
-import 'data/services/metrics_service.dart';
+import 'data/services/metrics_service.dart' hide metricsServiceProvider;
 import 'ui/app.dart';
 
 void main() async {

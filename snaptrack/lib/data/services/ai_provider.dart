@@ -1,8 +1,17 @@
 import 'dart:io';
 import '../models/food_entry.dart';
+import '../models/measurement_unit.dart';
 
 abstract class AIProvider {
   Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint});
+  
+  // v1.4: Portion-based analysis
+  Future<FoodAnalysis> analyzeImageWithPortions(
+    File imageFile, {
+    String? userHint,
+    bool requestPortions = true,
+  });
+  
   String get name;
   String get providerId;
   bool get isConfigured;
@@ -25,6 +34,10 @@ class FoodAnalysis {
   final List<DietaryTag> suggestedDietaryTags;
   final String? portionSize;
   final String? cookingMethod;
+  
+  // v1.4: Portion-based analysis support
+  final List<FoodPortion>? detectedPortions;
+  final bool hasPortionData;
 
   FoodAnalysis({
     required this.name,
@@ -40,6 +53,8 @@ class FoodAnalysis {
     this.suggestedDietaryTags = const [],
     this.portionSize,
     this.cookingMethod,
+    this.detectedPortions,
+    this.hasPortionData = false,
   });
 
   factory FoodAnalysis.fromJson(Map<String, dynamic> json) {
@@ -85,6 +100,12 @@ class FoodAnalysis {
           : [],
       portionSize: json['portionSize'],
       cookingMethod: json['cookingMethod'],
+      detectedPortions: json['detectedPortions'] != null
+          ? (json['detectedPortions'] as List)
+              .map((portion) => FoodPortion.fromJson(portion))
+              .toList()
+          : null,
+      hasPortionData: json['hasPortionData'] ?? false,
     );
   }
 }

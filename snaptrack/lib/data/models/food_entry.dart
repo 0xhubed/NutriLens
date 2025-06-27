@@ -1,4 +1,5 @@
 import 'package:isar/isar.dart';
+import 'measurement_unit.dart';
 
 part 'food_entry.g.dart';
 
@@ -80,8 +81,76 @@ class FoodEntry {
   
   String? aiProvider; // Which provider was used for analysis
   
+  // v1.4: Measurement Units and Portions Support
+  bool usePortions = false; // Flag to indicate if using portion-based input
+  List<FoodPortion> portions = []; // List of food portions with units
+  
+  // Backward compatibility - computed from portions when usePortions = true
+  double get totalPortionWeight {
+    if (!usePortions || portions.isEmpty) return actualWeight;
+    return portions.fold(0.0, (sum, portion) => sum + portion.effectiveGrams);
+  }
+  
+  // Computed nutrition from portions
+  double get portionCalories {
+    if (!usePortions) return calories;
+    return portions.fold(0.0, (sum, portion) => sum + portion.calories);
+  }
+  
+  double get portionProtein {
+    if (!usePortions) return protein;
+    return portions.fold(0.0, (sum, portion) => sum + portion.protein);
+  }
+  
+  double get portionCarbs {
+    if (!usePortions) return carbs;
+    return portions.fold(0.0, (sum, portion) => sum + portion.carbs);
+  }
+  
+  double get portionFat {
+    if (!usePortions) return fat;
+    return portions.fold(0.0, (sum, portion) => sum + portion.fat);
+  }
+  
+  // Effective values (use portions if available, fallback to traditional)
+  double get effectiveCalories => usePortions ? portionCalories : calories;
+  double get effectiveProtein => usePortions ? portionProtein : protein;
+  double get effectiveCarbs => usePortions ? portionCarbs : carbs;
+  double get effectiveFat => usePortions ? portionFat : fat;
+  double get effectiveWeight => usePortions ? totalPortionWeight : actualWeight;
+  
   // Computed property for total macros
-  double get totalMacros => protein + carbs + fat;
+  double get totalMacros => effectiveProtein + effectiveCarbs + effectiveFat;
+  
+  // Helper methods for portions
+  void addPortion(FoodPortion portion) {
+    portions.add(portion);
+    if (!usePortions) usePortions = true;
+  }
+  
+  void removePortion(int index) {
+    if (index >= 0 && index < portions.length) {
+      portions.removeAt(index);
+      if (portions.isEmpty) usePortions = false;
+    }
+  }
+  
+  void clearPortions() {
+    portions.clear();
+    usePortions = false;
+  }
+  
+  String get portionSummary {
+    if (!usePortions || portions.isEmpty) {
+      return '${actualWeight.toStringAsFixed(0)}g';
+    }
+    
+    if (portions.length == 1) {
+      return portions.first.formattedQuantity;
+    }
+    
+    return '${portions.length} items (${totalPortionWeight.toStringAsFixed(0)}g)';
+  }
   
   // Helper methods for categorization
   bool hasTag(DietaryTag tag) => dietaryTags.contains(tag);

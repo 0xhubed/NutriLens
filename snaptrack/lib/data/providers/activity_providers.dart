@@ -4,6 +4,7 @@ import '../models/activity_entry.dart';
 import '../models/user_metrics.dart';
 import '../services/activity_database.dart';
 import '../services/activity_service.dart';
+import 'nutrition_providers.dart';
 
 // Activity Service Provider
 final activityServiceProvider = Provider<ActivityService>((ref) {

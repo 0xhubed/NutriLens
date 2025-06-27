@@ -7,13 +7,18 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../data/models/food_entry.dart';
+import '../../data/models/measurement_unit.dart';
 import '../../data/providers/analysis_providers.dart';
 import '../../data/services/analytics_service.dart';
 import '../../data/providers/nutrition_providers.dart';
 import '../../data/providers/camera_providers.dart';
+import '../../data/providers/measurement_providers.dart';
 import '../../data/services/database_service.dart';
 import '../../data/services/ai_provider.dart';
 import '../common/date_time_picker_widget.dart';
+import '../widgets/multi_unit_input_widget.dart';
+import '../widgets/natural_language_input_widget.dart';
+import '../screens/measurement_guide_screen.dart';
 
 class AnalysisScreen extends ConsumerStatefulWidget {
   final File imageFile;
@@ -39,6 +44,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   
   bool _showAlternatives = false;
   bool _userConfirmedCorrect = false;
+  bool _usePortionMode = false;
+  List<FoodPortion> _portions = [];
   late DateTime _selectedDateTime;
   
   late AnimationController _slideController;
@@ -812,30 +819,38 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
-                  borderRadius: AppRadius.small,
-                ),
-                child: Icon(
-                  Icons.restaurant_menu_rounded,
-                  color: colorScheme.primary,
-                  size: 20,
-                ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withOpacity(0.1),
+                      borderRadius: AppRadius.small,
+                    ),
+                    child: Icon(
+                      _usePortionMode ? Icons.straighten_rounded : Icons.restaurant_menu_rounded,
+                      color: colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Text(
+                    _usePortionMode ? 'Portion Entry' : 'Nutrition Details',
+                    style: AppTextStyles.titleLarge.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: AppSpacing.md),
-              Text(
-                'Nutrition Details',
-                style: AppTextStyles.titleLarge.copyWith(
-                  color: colorScheme.onSurface,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              _buildInputModeToggle(colorScheme),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
+          
+          // Food Name Field (always shown)
           _buildFormField(
             controller: _nameController,
             label: 'Food Name',
@@ -843,47 +858,15 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
             colorScheme: colorScheme,
           ),
           const SizedBox(height: AppSpacing.md),
-          _buildFormField(
-            controller: _caloriesController,
-            label: 'Calories (kcal)',
-            icon: Icons.local_fire_department_rounded,
-            keyboardType: TextInputType.number,
-            colorScheme: colorScheme,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              Expanded(
-                child: _buildFormField(
-                  controller: _proteinController,
-                  label: 'Protein (g)',
-                  icon: Icons.fitness_center_rounded,
-                  keyboardType: TextInputType.number,
-                  colorScheme: colorScheme,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: _buildFormField(
-                  controller: _carbsController,
-                  label: 'Carbs (g)',
-                  icon: Icons.grain_rounded,
-                  keyboardType: TextInputType.number,
-                  colorScheme: colorScheme,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: _buildFormField(
-                  controller: _fatController,
-                  label: 'Fat (g)',
-                  icon: Icons.water_drop_rounded,
-                  keyboardType: TextInputType.number,
-                  colorScheme: colorScheme,
-                ),
-              ),
-            ],
-          ),
+          
+          // Conditional form content based on mode
+          if (_usePortionMode) ...[
+            // Portion-based input mode
+            _buildPortionInputSection(colorScheme),
+          ] else ...[
+            // Traditional nutrition input mode
+            _buildTraditionalNutritionInput(colorScheme),
+          ],
           const SizedBox(height: AppSpacing.lg),
           
           // Date and Time Selection
@@ -917,6 +900,269 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
     );
   }
   
+  Widget _buildInputModeToggle(ColorScheme colorScheme) {
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: AppRadius.medium,
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildToggleOption(
+            'Nutrition',
+            Icons.restaurant_menu_rounded,
+            !_usePortionMode,
+            () => setState(() => _usePortionMode = false),
+            colorScheme,
+          ),
+          _buildToggleOption(
+            'Portions',
+            Icons.straighten_rounded,
+            _usePortionMode,
+            () => setState(() => _usePortionMode = true),
+            colorScheme,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleOption(
+    String label,
+    IconData icon,
+    bool isSelected,
+    VoidCallback onTap,
+    ColorScheme colorScheme,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? colorScheme.primary.withOpacity(0.1) : Colors.transparent,
+          borderRadius: AppRadius.medium,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              label,
+              style: AppTextStyles.labelMedium.copyWith(
+                color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTraditionalNutritionInput(ColorScheme colorScheme) {
+    return Column(
+      children: [
+        _buildFormField(
+          controller: _caloriesController,
+          label: 'Calories (kcal)',
+          icon: Icons.local_fire_department_rounded,
+          keyboardType: TextInputType.number,
+          colorScheme: colorScheme,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: _buildFormField(
+                controller: _proteinController,
+                label: 'Protein (g)',
+                icon: Icons.fitness_center_rounded,
+                keyboardType: TextInputType.number,
+                colorScheme: colorScheme,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _buildFormField(
+                controller: _carbsController,
+                label: 'Carbs (g)',
+                icon: Icons.grain_rounded,
+                keyboardType: TextInputType.number,
+                colorScheme: colorScheme,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _buildFormField(
+                controller: _fatController,
+                label: 'Fat (g)',
+                icon: Icons.water_drop_rounded,
+                keyboardType: TextInputType.number,
+                colorScheme: colorScheme,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPortionInputSection(ColorScheme colorScheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Quick natural language input
+        NaturalLanguageInputWidget(
+          onPortionParsed: (portion) {
+            setState(() {
+              if (_portions.isEmpty || _portions.first.foodName != portion.foodName) {
+                _portions = [portion];
+              } else {
+                _portions.add(portion);
+              }
+            });
+            _updateNutritionFromPortions();
+          },
+          initialValue: '',
+          hintText: 'e.g., "2 cups rice" or "1 tbsp oil"',
+          showExamples: false,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        
+        // Multi-unit input widget
+        MultiUnitInputWidget(
+          foodName: _nameController.text.isNotEmpty ? _nameController.text : 'Food Item',
+          portions: _portions,
+          onPortionsChanged: (portions) {
+            setState(() {
+              _portions = portions;
+            });
+            _updateNutritionFromPortions();
+          },
+          showToggle: false,
+        ),
+        
+        // Show calculated nutrition summary
+        if (_portions.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.md),
+          _buildPortionNutritionSummary(colorScheme),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildPortionNutritionSummary(ColorScheme colorScheme) {
+    final totalWeight = _portions.fold(0.0, (sum, p) => sum + p.effectiveGrams);
+    final totalCalories = double.tryParse(_caloriesController.text) ?? 0.0;
+    final totalProtein = double.tryParse(_proteinController.text) ?? 0.0;
+    final totalCarbs = double.tryParse(_carbsController.text) ?? 0.0;
+    final totalFat = double.tryParse(_fatController.text) ?? 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer.withOpacity(0.1),
+        borderRadius: AppRadius.medium,
+        border: Border.all(
+          color: colorScheme.primary.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.calculate_rounded,
+                color: colorScheme.primary,
+                size: 16,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                'Portion Summary',
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNutritionSummaryItem('Weight', '${totalWeight.toStringAsFixed(0)}g', AppColors.primaryGreen),
+              _buildNutritionSummaryItem('Calories', '${totalCalories.toStringAsFixed(0)}', AppColors.secondaryOrange),
+              _buildNutritionSummaryItem('Protein', '${totalProtein.toStringAsFixed(1)}g', AppColors.proteinPurple),
+              _buildNutritionSummaryItem('Carbs', '${totalCarbs.toStringAsFixed(1)}g', AppColors.carbsBlue),
+              _buildNutritionSummaryItem('Fat', '${totalFat.toStringAsFixed(1)}g', AppColors.fatsYellow),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNutritionSummaryItem(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: AppTextStyles.labelLarge.copyWith(
+            color: color,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        Text(
+          label,
+          style: AppTextStyles.labelSmall.copyWith(
+            color: color.withOpacity(0.8),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _updateNutritionFromPortions() {
+    if (_portions.isEmpty) return;
+    
+    // For now, use simple estimation. In a real app, you'd use the conversion service
+    // to calculate nutrition based on portions and food database
+    double totalCalories = 0;
+    double totalProtein = 0;
+    double totalCarbs = 0;
+    double totalFat = 0;
+    
+    for (final portion in _portions) {
+      // These would come from a food database lookup
+      // For demo purposes, using rough estimates per 100g
+      final weight = portion.effectiveGrams;
+      totalCalories += weight * 1.5; // ~150 cal per 100g average
+      totalProtein += weight * 0.1;  // ~10g protein per 100g average
+      totalCarbs += weight * 0.2;    // ~20g carbs per 100g average
+      totalFat += weight * 0.05;     // ~5g fat per 100g average
+    }
+    
+    _caloriesController.text = totalCalories.toStringAsFixed(0);
+    _proteinController.text = totalProtein.toStringAsFixed(1);
+    _carbsController.text = totalCarbs.toStringAsFixed(1);
+    _fatController.text = totalFat.toStringAsFixed(1);
+  }
+
   Widget _buildFormField({
     required TextEditingController controller,
     required String label,
@@ -1023,7 +1269,9 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
         ..carbs = double.tryParse(_carbsController.text) ?? 0
         ..fat = double.tryParse(_fatController.text) ?? 0
         ..timestamp = _selectedDateTime
-        ..imageBase64 = '';
+        ..imageBase64 = ''
+        ..usePortions = _usePortionMode
+        ..portions = _usePortionMode ? _portions : [];
       
       await ref.read(databaseServiceProvider).saveFoodEntry(entry);
       

@@ -134,6 +134,20 @@ class AppTextStyles {
     letterSpacing: 0.15,
     height: 1.4,
   );
+  
+  static const TextStyle labelSmall = TextStyle(
+    fontSize: 11,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.5,
+    height: 1.2,
+  );
+  
+  static const TextStyle displaySmall = TextStyle(
+    fontSize: 24,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0,
+    height: 1.3,
+  );
 }
 
 class AppTheme {

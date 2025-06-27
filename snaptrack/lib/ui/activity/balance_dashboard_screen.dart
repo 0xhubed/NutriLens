@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../data/models/user_metrics.dart';
 import '../../data/providers/activity_providers.dart';
 import '../../data/providers/goal_providers.dart';
 import '../../data/providers/metrics_providers.dart';
 import '../../data/providers/nutrition_providers.dart';
+import '../../data/services/activity_service.dart';
+import '../../data/services/goal_service.dart';
 
 class BalanceDashboardScreen extends ConsumerWidget {
   const BalanceDashboardScreen({super.key});
@@ -160,6 +163,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
             return Column(
               children: [
                 _buildBalanceRow(
+                  context,
                   'Food Intake',
                   '+${foodCalories.toStringAsFixed(0)} cal',
                   Icons.restaurant_rounded,
@@ -168,6 +172,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 _buildBalanceRow(
+                  context,
                   'Exercise Burn',
                   '-${activityBurn.toStringAsFixed(0)} cal',
                   Icons.fitness_center_rounded,
@@ -176,6 +181,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 _buildBalanceRow(
+                  context,
                   'Base Metabolic',
                   '-${estimatedBMR.toStringAsFixed(0)} cal',
                   Icons.favorite_rounded,
@@ -199,6 +205,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildBalanceRow(
+    BuildContext context,
     String label,
     String value,
     IconData icon,

@@ -58,25 +58,34 @@ class OpenAIProvider extends AIProvider implements TextAnalysisCapable {
 
   @override
   Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint}) async {
+    return analyzeImageWithPortions(imageFile, userHint: userHint, requestPortions: false);
+  }
+
+  @override
+  Future<FoodAnalysis> analyzeImageWithPortions(
+    File imageFile, {
+    String? userHint,
+    bool requestPortions = true,
+  }) async {
     final apiKey = await getApiKey();
     
     try {
       if (apiKey == null || apiKey.isEmpty) {
         // Fall back to mock data if no API key is configured
         print('OpenAI: No API key configured, using mock data');
-        final mockData = _getMockAnalysis();
+        final mockData = _getMockAnalysis(requestPortions: requestPortions);
         return FoodAnalysis.fromJson(mockData);
       }
       
       // Make real API call to OpenAI Vision
-      final analysisData = await _callOpenAIVision(imageFile, apiKey, userHint);
+      final analysisData = await _callOpenAIVision(imageFile, apiKey, userHint, requestPortions: requestPortions);
       return FoodAnalysis.fromJson(analysisData);
     } catch (e) {
       throw AIProviderException('Analysis failed: $e', provider: this, originalError: e);
     }
   }
   
-  Map<String, dynamic> _getMockAnalysis() {
+  Map<String, dynamic> _getMockAnalysis({bool requestPortions = false}) {
     // Mock data for testing with enhanced categorization including weight estimation
     return {
       'name': 'Grilled Chicken Breast with Vegetables',
@@ -110,11 +119,28 @@ class OpenAIProvider extends AIProvider implements TextAnalysisCapable {
       'cuisine': 'american',
       'dietaryTags': ['highProtein', 'lowCarb'],
       'portionSize': 'Medium',
-      'cookingMethod': 'Grilled'
+      'cookingMethod': 'Grilled',
+      'detectedPortions': requestPortions ? [
+        {
+          'foodName': 'Grilled Chicken Breast',
+          'quantity': 6.0,
+          'unitId': 'oz',
+          'unitDisplayName': 'ounce',
+          'estimatedGrams': 170.0
+        },
+        {
+          'foodName': 'Steamed Broccoli',
+          'quantity': 1.0,
+          'unitId': 'cup',
+          'unitDisplayName': 'cup',
+          'estimatedGrams': 80.0
+        }
+      ] : null,
+      'hasPortionData': requestPortions
     };
   }
   
-  Future<Map<String, dynamic>> _callOpenAIVision(File imageFile, String apiKey, String? userHint) async {
+  Future<Map<String, dynamic>> _callOpenAIVision(File imageFile, String apiKey, String? userHint, {bool requestPortions = false}) async {
     try {
       // Convert image to base64
       final bytes = await imageFile.readAsBytes();
@@ -165,8 +191,7 @@ Return ONLY a valid JSON object with no additional text, markdown formatting, or
   "cuisine": "italian|asian|american|mexican|indian|mediterranean|other",
   "dietaryTags": ["vegetarian", "vegan", "glutenFree", "ketoFriendly", "lowCarb", "highProtein"],
   "portionSize": "Small|Medium|Large",
-  "cookingMethod": "Grilled|Fried|Steamed|Raw|Baked|etc"
-}
+  "cookingMethod": "Grilled|Fried|Steamed|Raw|Baked|etc"${requestPortions ? ',\n  "detectedPortions": [\n    {\n      "foodName": "Individual food item name",\n      "quantity": number,\n      "unitId": "unit identifier (e.g., cup, tbsp, oz, piece)",\n      "unitDisplayName": "unit display name",\n      "estimatedGrams": number\n    }\n  ],\n  "hasPortionData": true' : ''}\n}
                   ''',
                 },
                 {

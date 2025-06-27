@@ -46,18 +46,27 @@ class AnthropicProvider extends AIProvider {
 
   @override
   Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint}) async {
+    return analyzeImageWithPortions(imageFile, userHint: userHint, requestPortions: false);
+  }
+
+  @override
+  Future<FoodAnalysis> analyzeImageWithPortions(
+    File imageFile, {
+    String? userHint,
+    bool requestPortions = true,
+  }) async {
     final apiKey = await getApiKey();
     
     try {
       if (apiKey == null || apiKey.isEmpty) {
         // Fall back to mock data if no API key is configured
         print('Anthropic: No API key configured, using mock data');
-        final mockData = _getMockAnalysis(userHint);
+        final mockData = _getMockAnalysis(userHint, requestPortions: requestPortions);
         return FoodAnalysis.fromJson(mockData);
       }
       
       // Make real API call to Anthropic Claude Vision
-      final analysisData = await _callAnthropicVision(imageFile, apiKey, userHint);
+      final analysisData = await _callAnthropicVision(imageFile, apiKey, userHint, requestPortions: requestPortions);
       return FoodAnalysis.fromJson(analysisData);
     } catch (e) {
       throw AIProviderException('Analysis failed: $e', provider: this, originalError: e);
@@ -77,7 +86,7 @@ class AnthropicProvider extends AIProvider {
     return apiKey != null && apiKey.isNotEmpty;
   }
 
-  Map<String, dynamic> _getMockAnalysis(String? userHint) {
+  Map<String, dynamic> _getMockAnalysis(String? userHint, {bool requestPortions = false}) {
     // Mock data for testing different hint scenarios
     if (userHint != null) {
       final lowerHint = userHint.toLowerCase();
@@ -113,7 +122,24 @@ class AnthropicProvider extends AIProvider {
           'cuisine': 'other',
           'dietaryTags': ['vegetarian'],
           'portionSize': 'Medium',
-          'cookingMethod': 'Boiled'
+          'cookingMethod': 'Boiled',
+          'detectedPortions': requestPortions ? [
+            {
+              'foodName': 'Oatmeal Porridge',
+              'quantity': 1.0,
+              'unitId': 'cup_cooked',
+              'unitDisplayName': 'cup (cooked)',
+              'estimatedGrams': 240.0
+            },
+            {
+              'foodName': 'Milk',
+              'quantity': 0.25,
+              'unitId': 'cup',
+              'unitDisplayName': 'cup',
+              'estimatedGrams': 60.0
+            }
+          ] : null,
+          'hasPortionData': requestPortions
         };
       }
       
@@ -150,7 +176,24 @@ class AnthropicProvider extends AIProvider {
             'cuisine': 'other',
             'dietaryTags': ['vegetarian'],
             'portionSize': 'Medium',
-            'cookingMethod': 'Boiled'
+            'cookingMethod': 'Boiled',
+            'detectedPortions': requestPortions ? [
+              {
+                'foodName': 'Oatmeal Porridge',
+                'quantity': 1.0,
+                'unitId': 'cup_cooked',
+                'unitDisplayName': 'cup (cooked)',
+                'estimatedGrams': 240.0
+              },
+              {
+                'foodName': 'Milk',
+                'quantity': 0.25,
+                'unitId': 'cup',
+                'unitDisplayName': 'cup',
+                'estimatedGrams': 60.0
+              }
+            ] : null,
+            'hasPortionData': requestPortions
           };
         }
       }
@@ -202,7 +245,38 @@ class AnthropicProvider extends AIProvider {
         'cuisine': 'other',
         'dietaryTags': ['vegetarian'],
         'portionSize': 'Medium',
-        'cookingMethod': 'Boiled'
+        'cookingMethod': 'Boiled',
+        'detectedPortions': requestPortions ? [
+          {
+            'foodName': 'Oatmeal Porridge',
+            'quantity': 1.0,
+            'unitId': 'cup_cooked',
+            'unitDisplayName': 'cup (cooked)',
+            'estimatedGrams': 240.0
+          },
+          {
+            'foodName': 'Mixed Berries',
+            'quantity': 0.5,
+            'unitId': 'cup',
+            'unitDisplayName': 'cup',
+            'estimatedGrams': 75.0
+          },
+          {
+            'foodName': 'Honey',
+            'quantity': 1.0,
+            'unitId': 'tbsp',
+            'unitDisplayName': 'tablespoon',
+            'estimatedGrams': 21.0
+          },
+          {
+            'foodName': 'Milk',
+            'quantity': 2.0,
+            'unitId': 'tbsp',
+            'unitDisplayName': 'tablespoon',
+            'estimatedGrams': 30.0
+          }
+        ] : null,
+        'hasPortionData': requestPortions
         };
       }
     }
@@ -245,11 +319,35 @@ class AnthropicProvider extends AIProvider {
       'cuisine': 'mediterranean',
       'dietaryTags': ['vegetarian', 'highProtein'],
       'portionSize': 'Large',
-      'cookingMethod': 'Mixed'
+      'cookingMethod': 'Mixed',
+      'detectedPortions': requestPortions ? [
+        {
+          'foodName': 'Quinoa',
+          'quantity': 1.0,
+          'unitId': 'cup_cooked',
+          'unitDisplayName': 'cup (cooked)',
+          'estimatedGrams': 185.0
+        },
+        {
+          'foodName': 'Chickpeas',
+          'quantity': 0.5,
+          'unitId': 'cup',
+          'unitDisplayName': 'cup',
+          'estimatedGrams': 82.0
+        },
+        {
+          'foodName': 'Feta Cheese',
+          'quantity': 1.0,
+          'unitId': 'oz',
+          'unitDisplayName': 'ounce',
+          'estimatedGrams': 28.0
+        }
+      ] : null,
+      'hasPortionData': requestPortions
     };
   }
 
-  Future<Map<String, dynamic>> _callAnthropicVision(File imageFile, String apiKey, String? userHint) async {
+  Future<Map<String, dynamic>> _callAnthropicVision(File imageFile, String apiKey, String? userHint, {bool requestPortions = false}) async {
     try {
       // Convert image to base64
       final bytes = await imageFile.readAsBytes();
@@ -298,8 +396,7 @@ Return ONLY a valid JSON object with no additional text, markdown formatting, or
   "cuisine": "italian|asian|american|mexican|indian|mediterranean|other",
   "dietaryTags": ["vegetarian", "vegan", "glutenFree", "ketoFriendly", "lowCarb", "highProtein"],
   "portionSize": "Small|Medium|Large",
-  "cookingMethod": "Grilled|Fried|Steamed|Raw|Baked|etc"
-}
+  "cookingMethod": "Grilled|Fried|Steamed|Raw|Baked|etc"${requestPortions ? ',\n  "detectedPortions": [\n    {\n      "foodName": "Individual food item name",\n      "quantity": number,\n      "unitId": "unit identifier (e.g., cup, tbsp, oz, piece)",\n      "unitDisplayName": "unit display name",\n      "estimatedGrams": number\n    }\n  ],\n  "hasPortionData": true' : ''}\n}
                   ''',
                 },
                 {

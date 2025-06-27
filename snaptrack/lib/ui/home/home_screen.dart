@@ -32,7 +32,7 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 _buildDailySummaryCard(todayNutrition, colorScheme),
                 const SizedBox(height: AppSpacing.lg),
-                _buildBalancePreview(context, colorScheme),
+                _buildBalancePreview(context, ref, colorScheme),
                 const SizedBox(height: AppSpacing.lg),
                 _buildRecentActivity(context, colorScheme),
                 const SizedBox(height: AppSpacing.xxxl),
@@ -561,7 +561,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
   
-  Widget _buildBalancePreview(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildBalancePreview(BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
     final balanceAsync = ref.watch(dailyCalorieBalanceProvider);
     
     return Card(

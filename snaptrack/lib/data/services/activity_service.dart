@@ -74,13 +74,13 @@ class ActivityService {
   // Calorie calculation methods
   Future<double> calculateDailyBurn(DateTime date) async {
     final activities = await getActivitiesForDate(date);
-    return activities.fold(0.0, (sum, activity) => sum + activity.caloriesBurned);
+    return activities.fold<double>(0.0, (double sum, ActivityEntry activity) => sum + activity.caloriesBurned);
   }
 
   Future<double> calculateWeeklyBurn(DateTime startDate) async {
     final endDate = startDate.add(const Duration(days: 7));
     final activities = await getActivitiesInRange(startDate, endDate);
-    return activities.fold(0.0, (sum, activity) => sum + activity.caloriesBurned);
+    return activities.fold<double>(0.0, (double sum, ActivityEntry activity) => sum + activity.caloriesBurned);
   }
 
   // Create activity entry with automatic calorie calculation
