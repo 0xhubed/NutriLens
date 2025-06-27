@@ -15,7 +15,8 @@ class DailyProgressCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final targetDate = date ?? DateTime.now();
-    final progressAsync = ref.watch(dailyProgressProvider(targetDate));
+    // Pass null instead of targetDate to match the provider parameter
+    final progressAsync = ref.watch(dailyProgressProvider(date));
 
     return Card(
       child: Padding(

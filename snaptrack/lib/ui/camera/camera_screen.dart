@@ -154,6 +154,7 @@ class CameraScreen extends ConsumerWidget {
                       MaterialPageRoute(
                         builder: (context) => AnalysisScreen(
                           imageFile: File(imageState.path),
+                          initialDateTime: DateTime.now(),
                         ),
                       ),
                     );

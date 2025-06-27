@@ -112,7 +112,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
     return RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(weeklyStatsProvider(_weekStart));
-        ref.invalidate(dailyProgressProvider);
+        ref.invalidate(dailyProgressProvider(null));
       },
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

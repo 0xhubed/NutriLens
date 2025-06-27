@@ -9,6 +9,7 @@ import 'history/history_screen.dart';
 import 'home/home_screen.dart';
 import 'settings/provider_settings_screen.dart';
 import 'templates/template_library_screen.dart';
+import 'templates/template_selection_screen.dart';
 import 'text_entry/text_food_entry_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -49,6 +50,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/text-entry',
         name: 'textEntry',
         builder: (context, state) => const TextFoodEntryScreen(),
+      ),
+      GoRoute(
+        path: '/templates/select',
+        name: 'templateSelect',
+        builder: (context, state) => const TemplateSelectionScreen(),
       ),
     ],
   );

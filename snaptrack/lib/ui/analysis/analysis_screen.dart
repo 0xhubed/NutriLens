@@ -8,16 +8,21 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/food_entry.dart';
 import '../../data/providers/analysis_providers.dart';
+import '../../data/services/analytics_service.dart';
+import '../../data/providers/nutrition_providers.dart';
 import '../../data/providers/camera_providers.dart';
 import '../../data/services/database_service.dart';
 import '../../data/services/ai_provider.dart';
+import '../common/date_time_picker_widget.dart';
 
 class AnalysisScreen extends ConsumerStatefulWidget {
   final File imageFile;
+  final DateTime? initialDateTime;
   
   const AnalysisScreen({
     super.key,
     required this.imageFile,
+    this.initialDateTime,
   });
 
   @override
@@ -34,6 +39,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   
   bool _showAlternatives = false;
   bool _userConfirmedCorrect = false;
+  late DateTime _selectedDateTime;
   
   late AnimationController _slideController;
   late AnimationController _fadeController;
@@ -41,10 +47,39 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<double> _pulseAnimation;
+
+  void _invalidateAnalyticsProviders(DateTime affectedDate) {
+    // Always invalidate global providers
+    ref.invalidate(foodEntriesProvider);
+    ref.invalidate(todayNutritionProvider);
+    
+    // Invalidate date-specific providers
+    ref.invalidate(foodEntriesByDateProvider(affectedDate));
+    ref.invalidate(dailyProgressProvider(affectedDate));
+    ref.invalidate(dailyProgressProvider(null)); // Today's progress
+    
+    // Invalidate weekly stats for the affected week
+    final weekStart = _getWeekStart(affectedDate);
+    ref.invalidate(weeklyStatsProvider(weekStart));
+    
+    // Invalidate current week if different
+    final currentWeekStart = _getWeekStart(DateTime.now());
+    if (weekStart != currentWeekStart) {
+      ref.invalidate(weeklyStatsProvider(currentWeekStart));
+    }
+  }
+
+  DateTime _getWeekStart(DateTime date) {
+    final daysFromMonday = date.weekday - 1;
+    return DateTime(date.year, date.month, date.day - daysFromMonday);
+  }
   
   @override
   void initState() {
     super.initState();
+    
+    // Initialize DateTime
+    _selectedDateTime = widget.initialDateTime ?? DateTime.now();
     
     // Initialize animations
     _slideController = AnimationController(
@@ -849,6 +884,19 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
               ),
             ],
           ),
+          const SizedBox(height: AppSpacing.lg),
+          
+          // Date and Time Selection
+          DateTimePickerWidget(
+            initialDateTime: _selectedDateTime,
+            onDateTimeChanged: (newDateTime) {
+              setState(() {
+                _selectedDateTime = newDateTime;
+              });
+            },
+            label: 'When did you eat this?',
+          ),
+          
           const SizedBox(height: AppSpacing.xl),
           SizedBox(
             width: double.infinity,
@@ -974,10 +1022,13 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
         ..protein = double.tryParse(_proteinController.text) ?? 0
         ..carbs = double.tryParse(_carbsController.text) ?? 0
         ..fat = double.tryParse(_fatController.text) ?? 0
-        ..timestamp = DateTime.now()
+        ..timestamp = _selectedDateTime
         ..imageBase64 = '';
       
       await ref.read(databaseServiceProvider).saveFoodEntry(entry);
+      
+      // Invalidate analytics providers to refresh all statistics
+      _invalidateAnalyticsProviders(_selectedDateTime);
       
       // Reset camera state
       ref.read(selectedImageProvider.notifier).state = null;

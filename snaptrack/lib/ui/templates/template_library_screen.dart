@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/models/meal_template.dart';
 import '../../data/models/food_entry.dart';
 import '../../data/services/template_service.dart';
-import '../../data/services/ai_provider.dart';
+import '../../data/services/database_service.dart';
 import '../../data/providers/nutrition_providers.dart';
+import '../common/date_time_picker_widget.dart';
 
 class TemplateLibraryScreen extends ConsumerStatefulWidget {
   const TemplateLibraryScreen({super.key});
@@ -541,9 +543,109 @@ class _TemplateLibraryScreenState extends ConsumerState<TemplateLibraryScreen>
   }
 
   Future<void> _useTemplate(MealTemplate template) async {
-    // This would integrate with the main app flow to create a food entry
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Template would be used to create a meal entry')),
+    // Show date/time selection dialog
+    final selectedDateTime = await _showDateTimeDialog(template);
+    if (selectedDateTime == null) return;
+    
+    try {
+      // Use the template service to create a food entry
+      final foodEntry = await _templateService.useTemplate(template, timestamp: selectedDateTime);
+      
+      // Save the food entry to database
+      final dbService = ref.read(databaseServiceProvider);
+      await dbService.saveFoodEntry(foodEntry);
+
+      // Invalidate providers to refresh UI
+      _invalidateAnalyticsProviders(selectedDateTime);
+
+      if (mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('Added "${template.name}" to your meals'),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            action: SnackBarAction(
+              label: 'Close',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error adding template: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _invalidateAnalyticsProviders(DateTime affectedDate) {
+    // Always invalidate global providers
+    ref.invalidate(foodEntriesProvider);
+    ref.invalidate(todayNutritionProvider);
+    
+    // Invalidate date-specific providers if they exist
+    try {
+      ref.invalidate(foodEntriesByDateProvider(affectedDate));
+    } catch (e) {
+      // Provider might not exist, ignore
+    }
+  }
+
+  Future<DateTime?> _showDateTimeDialog(MealTemplate template) async {
+    DateTime selectedDateTime = DateTime.now();
+    
+    return await showDialog<DateTime>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text('Add "${template.name}"'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'When did you eat this?',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 16),
+                DateTimePickerWidget(
+                  initialDateTime: selectedDateTime,
+                  onDateTimeChanged: (newDateTime) {
+                    setState(() {
+                      selectedDateTime = newDateTime;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(selectedDateTime),
+              child: const Text('Add Meal'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

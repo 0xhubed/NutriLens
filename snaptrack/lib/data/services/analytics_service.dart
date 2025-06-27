@@ -302,24 +302,36 @@ final insightsProvider = FutureProvider<List<Insight>>((ref) async {
 });
 
 // Provider for daily progress
-final dailyProgressProvider = StreamProvider.family<DailyProgress, DateTime?>((ref, date) async* {
-  try {
-    final analyticsService = ref.watch(analyticsServiceProvider);
-    yield* analyticsService.watchDailyProgress(date: date);
-  } catch (e) {
-    // Fallback to default progress if there's an error
-    final targetDate = date ?? DateTime.now();
-    yield DailyProgress(
-      date: targetDate,
-      caloriesGoal: 2000.0,
-      caloriesActual: 0.0,
-      proteinGoal: 150.0,
-      proteinActual: 0.0,
-      carbsGoal: 250.0,
-      carbsActual: 0.0,
-      fatGoal: 67.0,
-      fatActual: 0.0,
-      mealsLogged: 0,
-    );
-  }
+final dailyProgressProvider = StreamProvider.family<DailyProgress, DateTime?>((ref, date) {
+  final analyticsService = ref.watch(analyticsServiceProvider);
+  final targetDate = date ?? DateTime.now();
+  
+  // Create default progress
+  final defaultProgress = DailyProgress(
+    date: targetDate,
+    caloriesGoal: 2000.0,
+    caloriesActual: 0.0,
+    proteinGoal: 150.0,
+    proteinActual: 0.0,
+    carbsGoal: 250.0,
+    carbsActual: 0.0,
+    fatGoal: 67.0,
+    fatActual: 0.0,
+    mealsLogged: 0,
+  );
+  
+  // Create a stream that immediately emits default data and then switches to database updates
+  return Stream<DailyProgress>.multi((controller) async {
+    // Emit default immediately
+    controller.add(defaultProgress);
+    
+    try {
+      // Subscribe to database updates
+      await for (final progress in analyticsService.watchDailyProgress(date: date)) {
+        controller.add(progress);
+      }
+    } catch (e) {
+      // On error, we already have default data emitted
+    }
+  });
 });

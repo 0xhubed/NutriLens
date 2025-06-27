@@ -751,6 +751,18 @@ class HomeScreen extends ConsumerWidget {
               },
             ),
             const SizedBox(height: AppSpacing.md),
+            _buildBottomSheetOption(
+              context,
+              'Use Template',
+              'Choose from saved meals',
+              Icons.library_books_rounded,
+              colorScheme.tertiary,
+              () {
+                Navigator.pop(context);
+                context.push('/templates/select');
+              },
+            ),
+            const SizedBox(height: AppSpacing.md),
           ],
         ),
       ),

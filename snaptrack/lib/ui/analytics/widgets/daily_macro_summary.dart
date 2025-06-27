@@ -16,7 +16,8 @@ class DailyMacroSummary extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final targetDate = date ?? DateTime.now();
-    final progressAsync = ref.watch(dailyProgressProvider(targetDate));
+    // Pass the same date parameter as provided to the widget
+    final progressAsync = ref.watch(dailyProgressProvider(date));
 
     return Card(
       child: Padding(

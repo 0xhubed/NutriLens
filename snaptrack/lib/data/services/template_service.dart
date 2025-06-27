@@ -70,7 +70,7 @@ class TemplateService {
   }
   
   // Use template to create food entry
-  Future<FoodEntry> useTemplate(MealTemplate template, {Map<int, double>? itemMultipliers}) async {
+  Future<FoodEntry> useTemplate(MealTemplate template, {Map<int, double>? itemMultipliers, DateTime? timestamp}) async {
     template.incrementUsage();
     
     // Update template usage
@@ -112,8 +112,8 @@ class TemplateService {
       ..protein = totalProtein
       ..carbs = totalCarbs
       ..fat = totalFat
-      ..timestamp = DateTime.now()
-      ..mealType = template.mealType ?? FoodEntry.suggestMealTypeByTime(DateTime.now())
+      ..timestamp = timestamp ?? DateTime.now()
+      ..mealType = template.mealType ?? FoodEntry.suggestMealTypeByTime(timestamp ?? DateTime.now())
       ..foodGroups = List.from(template.foodGroups)
       ..cuisine = template.cuisine
       ..dietaryTags = List.from(template.dietaryTags)

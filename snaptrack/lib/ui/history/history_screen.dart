@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import '../../data/models/food_entry.dart';
 import '../../data/providers/nutrition_providers.dart';
 import '../../data/services/database_service.dart';
+import '../../data/services/analytics_service.dart';
+import '../../data/services/template_service.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
@@ -18,6 +20,32 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   bool _isSelectionMode = false;
   final Set<int> _selectedEntries = {};
   bool _isGridView = false;
+
+  void _invalidateAnalyticsProviders(DateTime affectedDate) {
+    // Always invalidate global providers
+    ref.invalidate(foodEntriesProvider);
+    ref.invalidate(todayNutritionProvider);
+    
+    // Invalidate date-specific providers
+    ref.invalidate(foodEntriesByDateProvider(affectedDate));
+    ref.invalidate(dailyProgressProvider(affectedDate));
+    ref.invalidate(dailyProgressProvider(null)); // Today's progress
+    
+    // Invalidate weekly stats for the affected week
+    final weekStart = _getWeekStart(affectedDate);
+    ref.invalidate(weeklyStatsProvider(weekStart));
+    
+    // Invalidate current week if different
+    final currentWeekStart = _getWeekStart(DateTime.now());
+    if (weekStart != currentWeekStart) {
+      ref.invalidate(weeklyStatsProvider(currentWeekStart));
+    }
+  }
+
+  DateTime _getWeekStart(DateTime date) {
+    final daysFromMonday = date.weekday - 1;
+    return DateTime(date.year, date.month, date.day - daysFromMonday);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +87,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 tooltip: 'Edit Entry',
               ),
               IconButton(
+                icon: const Icon(Icons.bookmark_add),
+                onPressed: _selectedEntries.length == 1 ? _saveSelectedAsTemplate : null,
+                tooltip: 'Save as Template',
+              ),
+              IconButton(
                 icon: const Icon(Icons.delete),
                 onPressed: _deleteSelectedEntries,
                 tooltip: 'Delete Selected',
@@ -93,6 +126,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     onPressed: _editSelectedEntry,
                     backgroundColor: Colors.blue,
                     child: const Icon(Icons.edit),
+                  ),
+                if (_selectedEntries.length == 1) const SizedBox(height: 8),
+                if (_selectedEntries.length == 1)
+                  FloatingActionButton(
+                    heroTag: "template",
+                    onPressed: _saveSelectedAsTemplate,
+                    backgroundColor: Colors.green,
+                    child: const Icon(Icons.bookmark_add),
                   ),
                 if (_selectedEntries.length == 1) const SizedBox(height: 8),
                 FloatingActionButton(
@@ -146,12 +187,90 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     if (mounted) {
       final result = await showDialog<bool>(
         context: context,
-        builder: (context) => _EditEntryDialog(entry: entry),
+        builder: (context) => _EditEntryDialog(
+          entry: entry,
+          onSaveTemplate: (entry) => _showSaveAsTemplateDialog(context, entry),
+        ),
       );
       
       if (result == true) {
         _exitSelectionMode();
-        ref.invalidate(foodEntriesProvider);
+        _invalidateAnalyticsProviders(entry.timestamp);
+      }
+    }
+  }
+
+  Future<void> _saveSelectedAsTemplate() async {
+    if (_selectedEntries.length != 1) return;
+    
+    final entryId = _selectedEntries.first;
+    final entries = await ref.read(foodEntriesProvider.future);
+    final entry = entries.firstWhere((e) => e.id == entryId);
+    
+    if (mounted) {
+      await _showSaveAsTemplateDialog(context, entry);
+      _exitSelectionMode();
+    }
+  }
+
+  Future<void> _editEntry(FoodEntry entry) async {
+    if (mounted) {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (context) => _EditEntryDialog(
+          entry: entry,
+          onSaveTemplate: (entry) => _showSaveAsTemplateDialog(context, entry),
+        ),
+      );
+      
+      if (result == true) {
+        _invalidateAnalyticsProviders(entry.timestamp);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Food entry updated successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _deleteEntry(FoodEntry entry) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Entry'),
+        content: Text('Are you sure you want to delete "${entry.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final dbService = ref.read(databaseServiceProvider);
+      await dbService.deleteFoodEntry(entry.id);
+      _invalidateAnalyticsProviders(entry.timestamp);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${entry.name} deleted'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -177,8 +296,16 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
     if (confirmed == true) {
       final dbService = ref.read(databaseServiceProvider);
+      final entries = await ref.read(foodEntriesProvider.future);
+      final entriesToDelete = entries.where((e) => _selectedEntries.contains(e.id)).toList();
+      
       for (final entryId in _selectedEntries) {
         await dbService.deleteFoodEntry(entryId);
+      }
+      
+      // Invalidate analytics for all affected dates
+      for (final entry in entriesToDelete) {
+        _invalidateAnalyticsProviders(entry.timestamp);
       }
       
       _exitSelectionMode();
@@ -187,6 +314,136 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${_selectedEntries.length} entries deleted')),
         );
+      }
+    }
+  }
+
+  Future<void> _showSaveAsTemplateDialog(BuildContext context, FoodEntry entry) async {
+    final TextEditingController nameController = TextEditingController(text: entry.name);
+    final TextEditingController descriptionController = TextEditingController(
+      text: 'Template based on ${entry.name}',
+    );
+    
+    final result = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Save as Template'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Template Name',
+                  hintText: 'Enter a name for this template',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Description (optional)',
+                  hintText: 'Add a description',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Template will include:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text('• ${entry.calories.toStringAsFixed(0)} calories'),
+                    Text('• ${entry.protein.toStringAsFixed(1)}g protein'),
+                    Text('• ${entry.carbs.toStringAsFixed(1)}g carbs'),
+                    Text('• ${entry.fat.toStringAsFixed(1)}g fat'),
+                    if (entry.detectedItems.isNotEmpty)
+                      Text('• ${entry.detectedItems.length} food items'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final templateName = nameController.text.trim();
+              if (templateName.isEmpty) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a template name'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+                return;
+              }
+              
+              Navigator.of(dialogContext).pop({
+                'name': templateName,
+                'description': descriptionController.text.trim(),
+              });
+            },
+            child: const Text('Save Template'),
+          ),
+        ],
+      ),
+    );
+    
+    if (result != null && mounted) {
+      try {
+        // Get the database service and create template service
+        final dbService = ref.read(databaseServiceProvider);
+        final templateService = TemplateService(dbService.isar);
+        
+        // Create template from food entry
+        await templateService.createTemplate(
+          entry,
+          customName: result['name']!.isNotEmpty ? result['name'] : null,
+        );
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Template "${result['name']}" created successfully'),
+              backgroundColor: Colors.green,
+              action: SnackBarAction(
+                label: 'View Templates',
+                onPressed: () {
+                  // You can navigate to templates screen if it exists
+                  // Navigator.of(context).pushNamed('/templates');
+                },
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error creating template: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
@@ -362,6 +619,20 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   ),
                 ),
               ),
+            if (!_isSelectionMode)
+              Positioned(
+                bottom: 8,
+                right: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.edit, size: 16),
+                  onPressed: () => _editEntry(entry),
+                  tooltip: 'Edit Entry',
+                  style: IconButton.styleFrom(
+                    minimumSize: const Size(28, 28),
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.9),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -371,7 +642,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   void _viewEntryDetails(FoodEntry entry) {
     showDialog(
       context: context,
-      builder: (context) => _ViewEntryDialog(entry: entry),
+      builder: (context) => _ViewEntryDialog(
+        entry: entry,
+        onEdit: () => _editEntry(entry),
+        onSaveTemplate: (entry) => _showSaveAsTemplateDialog(context, entry),
+        onDelete: () => _deleteEntry(entry),
+      ),
     );
   }
   
@@ -504,6 +780,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               onDismissed: (direction) async {
                 final dbService = ref.read(databaseServiceProvider);
                 await dbService.deleteFoodEntry(entry.id);
+                _invalidateAnalyticsProviders(entry.timestamp);
                 
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -541,12 +818,27 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       ),
                   ],
                 ),
-                trailing: Text(
-                  DateFormat('HH:mm').format(entry.timestamp),
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      DateFormat('HH:mm').format(entry.timestamp),
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.edit, size: 18),
+                      onPressed: () => _editEntry(entry),
+                      tooltip: 'Edit Entry',
+                      style: IconButton.styleFrom(
+                        minimumSize: const Size(32, 32),
+                        backgroundColor: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+                      ),
+                    ),
+                  ],
                 ),
                 onTap: () => _viewEntryDetails(entry),
                 onLongPress: () {
@@ -608,8 +900,16 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
 class _ViewEntryDialog extends StatelessWidget {
   final FoodEntry entry;
+  final VoidCallback? onEdit;
+  final Function(FoodEntry)? onSaveTemplate;
+  final VoidCallback? onDelete;
 
-  const _ViewEntryDialog({required this.entry});
+  const _ViewEntryDialog({
+    required this.entry, 
+    this.onEdit,
+    this.onSaveTemplate,
+    this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -622,7 +922,7 @@ class _ViewEntryDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Food image
-            if (entry.imageBase64 != null && entry.imageBase64!.isNotEmpty)
+            if (entry.imageBase64.isNotEmpty)
               Container(
                 height: 200,
                 width: double.infinity,
@@ -655,6 +955,33 @@ class _ViewEntryDialog extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Close'),
         ),
+        if (onSaveTemplate != null)
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              onSaveTemplate!(entry);
+            },
+            child: const Text('Save as Template'),
+          ),
+        if (onDelete != null)
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              onDelete!();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Delete'),
+          ),
+        if (onEdit != null)
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              onEdit!();
+            },
+            child: const Text('Edit'),
+          ),
       ],
     );
   }
@@ -683,8 +1010,12 @@ class _ViewEntryDialog extends StatelessWidget {
 
 class _EditEntryDialog extends ConsumerStatefulWidget {
   final FoodEntry entry;
+  final Function(FoodEntry)? onSaveTemplate;
 
-  const _EditEntryDialog({required this.entry});
+  const _EditEntryDialog({
+    required this.entry,
+    this.onSaveTemplate,
+  });
 
   @override
   ConsumerState<_EditEntryDialog> createState() => _EditEntryDialogState();
@@ -853,6 +1184,14 @@ class _EditEntryDialogState extends ConsumerState<_EditEntryDialog> {
           onPressed: () => Navigator.of(context).pop(false),
           child: const Text('Cancel'),
         ),
+        if (widget.onSaveTemplate != null)
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(false);
+              widget.onSaveTemplate!(widget.entry);
+            },
+            child: const Text('Save as Template'),
+          ),
         FilledButton(
           onPressed: _saveChanges,
           child: const Text('Save'),
@@ -944,3 +1283,4 @@ class _EditEntryDialogState extends ConsumerState<_EditEntryDialog> {
     }
   }
 }
+

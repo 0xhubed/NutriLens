@@ -6,6 +6,9 @@ import '../../data/models/food_entry.dart';
 import '../../data/services/ai_provider.dart';
 import '../../data/services/database_service.dart';
 import '../../data/providers/analysis_providers.dart';
+import '../../data/services/analytics_service.dart';
+import '../../data/providers/nutrition_providers.dart';
+import '../common/date_time_picker_widget.dart';
 
 class TextFoodEntryScreen extends ConsumerStatefulWidget {
   const TextFoodEntryScreen({super.key});
@@ -21,6 +24,39 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
   bool _includeWeight = false;
   List<FoodSuggestion> _suggestions = [];
   FoodSuggestion? _selectedSuggestion;
+  late DateTime _selectedDateTime;
+
+  void _invalidateAnalyticsProviders(DateTime affectedDate) {
+    // Always invalidate global providers
+    ref.invalidate(foodEntriesProvider);
+    ref.invalidate(todayNutritionProvider);
+    
+    // Invalidate date-specific providers
+    ref.invalidate(foodEntriesByDateProvider(affectedDate));
+    ref.invalidate(dailyProgressProvider(affectedDate));
+    ref.invalidate(dailyProgressProvider(null)); // Today's progress
+    
+    // Invalidate weekly stats for the affected week
+    final weekStart = _getWeekStart(affectedDate);
+    ref.invalidate(weeklyStatsProvider(weekStart));
+    
+    // Invalidate current week if different
+    final currentWeekStart = _getWeekStart(DateTime.now());
+    if (weekStart != currentWeekStart) {
+      ref.invalidate(weeklyStatsProvider(currentWeekStart));
+    }
+  }
+
+  DateTime _getWeekStart(DateTime date) {
+    final daysFromMonday = date.weekday - 1;
+    return DateTime(date.year, date.month, date.day - daysFromMonday);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDateTime = DateTime.now();
+  }
 
   @override
   void dispose() {
@@ -115,6 +151,19 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
                 keyboardType: TextInputType.number,
               ),
             ],
+            const SizedBox(height: 24),
+            
+            // Date and Time Selection
+            DateTimePickerWidget(
+              initialDateTime: _selectedDateTime,
+              onDateTimeChanged: (newDateTime) {
+                setState(() {
+                  _selectedDateTime = newDateTime;
+                });
+              },
+              label: 'When did you eat this?',
+            ),
+            
             const SizedBox(height: 24),
             
             // Analyze button
@@ -313,8 +362,8 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
         ..protein = suggestion.protein * weightMultiplier
         ..carbs = suggestion.carbs * weightMultiplier
         ..fat = suggestion.fat * weightMultiplier
-        ..timestamp = DateTime.now()
-        ..mealType = FoodEntry.suggestMealTypeByTime(DateTime.now())
+        ..timestamp = _selectedDateTime
+        ..mealType = FoodEntry.suggestMealTypeByTime(_selectedDateTime)
         ..estimatedWeight = suggestion.estimatedWeight
         ..userWeight = userWeight
         ..aiProvider = ref.read(aiProviderManagerProvider).activeProvider?.providerId
@@ -322,6 +371,9 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
 
       final dbService = ref.read(databaseServiceProvider);
       await dbService.saveFoodEntry(entry);
+
+      // Invalidate analytics providers to refresh all statistics
+      _invalidateAnalyticsProviders(_selectedDateTime);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
