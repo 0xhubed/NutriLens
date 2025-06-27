@@ -258,7 +258,7 @@ class MeasurementGuideService {
 
   Future<int> _getTotalViews() async {
     final guides = await isar.measurementGuides.where().findAll();
-    return guides.fold(0, (sum, guide) => sum + guide.viewCount);
+    return guides.fold<int>(0, (int sum, guide) => sum + guide.viewCount);
   }
 }
 

@@ -3,22 +3,22 @@ import '../models/activity_entry.dart';
 class ActivityDatabase {
   static const List<Map<String, dynamic>> _activities = [
     // Cardio Activities
-    {'name': 'Running (6 mph)', 'met': 9.8, 'category': 'cardio', 'description': 'Running at moderate pace'},
-    {'name': 'Running (8 mph)', 'met': 11.8, 'category': 'cardio', 'description': 'Running at fast pace'},
-    {'name': 'Running (10 mph)', 'met': 14.5, 'category': 'cardio', 'description': 'Running at very fast pace'},
+    {'name': 'Running (9.7 km/h)', 'met': 9.8, 'category': 'cardio', 'description': 'Running at moderate pace'},
+    {'name': 'Running (12.9 km/h)', 'met': 11.8, 'category': 'cardio', 'description': 'Running at fast pace'},
+    {'name': 'Running (16.1 km/h)', 'met': 14.5, 'category': 'cardio', 'description': 'Running at very fast pace'},
     {'name': 'Jogging', 'met': 7.0, 'category': 'cardio', 'description': 'General jogging'},
-    {'name': 'Walking (2 mph)', 'met': 2.8, 'category': 'cardio', 'description': 'Slow walking'},
-    {'name': 'Walking (3 mph)', 'met': 3.5, 'category': 'cardio', 'description': 'Moderate walking'},
-    {'name': 'Walking (4 mph)', 'met': 5.0, 'category': 'cardio', 'description': 'Brisk walking'},
+    {'name': 'Walking (3.2 km/h)', 'met': 2.8, 'category': 'cardio', 'description': 'Slow walking'},
+    {'name': 'Walking (4.8 km/h)', 'met': 3.5, 'category': 'cardio', 'description': 'Moderate walking'},
+    {'name': 'Walking (6.4 km/h)', 'met': 5.0, 'category': 'cardio', 'description': 'Brisk walking'},
     {'name': 'Walking uphill', 'met': 6.0, 'category': 'cardio', 'description': 'Walking on incline'},
     {'name': 'Treadmill walking', 'met': 4.3, 'category': 'cardio', 'description': 'Walking on treadmill'},
     {'name': 'Treadmill running', 'met': 8.0, 'category': 'cardio', 'description': 'Running on treadmill'},
     
     // Cycling
-    {'name': 'Cycling (12-14 mph)', 'met': 8.0, 'category': 'cardio', 'description': 'Moderate cycling'},
-    {'name': 'Cycling (14-16 mph)', 'met': 10.0, 'category': 'cardio', 'description': 'Vigorous cycling'},
-    {'name': 'Cycling (16-19 mph)', 'met': 12.0, 'category': 'cardio', 'description': 'Fast cycling'},
-    {'name': 'Cycling (>20 mph)', 'met': 16.0, 'category': 'cardio', 'description': 'Racing cycling'},
+    {'name': 'Cycling (19-23 km/h)', 'met': 8.0, 'category': 'cardio', 'description': 'Moderate cycling'},
+    {'name': 'Cycling (23-26 km/h)', 'met': 10.0, 'category': 'cardio', 'description': 'Vigorous cycling'},
+    {'name': 'Cycling (26-31 km/h)', 'met': 12.0, 'category': 'cardio', 'description': 'Fast cycling'},
+    {'name': 'Cycling (>32 km/h)', 'met': 16.0, 'category': 'cardio', 'description': 'Racing cycling'},
     {'name': 'Stationary bike (moderate)', 'met': 6.8, 'category': 'cardio', 'description': 'Moderate stationary cycling'},
     {'name': 'Stationary bike (vigorous)', 'met': 8.8, 'category': 'cardio', 'description': 'Vigorous stationary cycling'},
     {'name': 'Mountain biking', 'met': 8.5, 'category': 'cardio', 'description': 'Off-road cycling'},
@@ -172,9 +172,9 @@ class ActivityDatabase {
   static List<Activity> getPopularActivities() {
     // Return most commonly used activities
     final popularNames = [
-      'Walking (3 mph)',
-      'Running (6 mph)',
-      'Cycling (12-14 mph)',
+      'Walking (4.8 km/h)',
+      'Running (9.7 km/h)',
+      'Cycling (19-23 km/h)',
       'Swimming (moderate)',
       'Weight lifting (moderate)',
       'Yoga (Vinyasa)',

@@ -28,17 +28,17 @@ class BalanceDashboardScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(AppSpacing.md),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                _buildDailyBalance(ref, colorScheme),
+                _buildDailyBalance(context, ref, colorScheme),
                 const SizedBox(height: AppSpacing.lg),
-                _buildBalanceMeter(ref, colorScheme),
+                _buildBalanceMeter(context, ref, colorScheme),
                 const SizedBox(height: AppSpacing.lg),
-                _buildGoalProgress(ref, colorScheme),
+                _buildGoalProgress(context, ref, colorScheme),
                 const SizedBox(height: AppSpacing.lg),
-                _buildActivitySummary(ref, colorScheme),
+                _buildActivitySummary(context, ref, colorScheme),
                 const SizedBox(height: AppSpacing.lg),
-                _buildNutritionSummary(ref, colorScheme),
+                _buildNutritionSummary(context, ref, colorScheme),
                 const SizedBox(height: AppSpacing.lg),
-                _buildHealthMetrics(ref, colorScheme),
+                _buildHealthMetrics(context, ref, colorScheme),
                 const SizedBox(height: AppSpacing.lg),
                 _buildQuickActions(context, colorScheme),
                 const SizedBox(height: AppSpacing.xxxl),
@@ -90,7 +90,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDailyBalance(WidgetRef ref, ColorScheme colorScheme) {
+  Widget _buildDailyBalance(BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
     final balanceAsync = ref.watch(dailyCalorieBalanceProvider);
     final todayNutrition = ref.watch(todayNutritionProvider);
     final todayActivityStats = ref.watch(todayActivityStatsProvider);
@@ -139,7 +139,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.lg),
-            _buildBalanceBreakdown(todayNutrition, todayActivityStats, colorScheme),
+            _buildBalanceBreakdown(context, todayNutrition, todayActivityStats, colorScheme),
           ],
         ),
       ),
@@ -147,6 +147,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildBalanceBreakdown(
+    BuildContext context,
     AsyncValue todayNutrition,
     AsyncValue todayActivityStats,
     ColorScheme colorScheme,
@@ -196,11 +197,11 @@ class BalanceDashboardScreen extends ConsumerWidget {
             );
           },
           loading: () => _buildLoadingState(),
-          error: (_, __) => _buildErrorState(),
+          error: (_, __) => _buildErrorState(colorScheme),
         );
       },
       loading: () => _buildLoadingState(),
-      error: (_, __) => _buildErrorState(),
+      error: (_, __) => _buildErrorState(colorScheme),
     );
   }
 
@@ -323,7 +324,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBalanceMeter(WidgetRef ref, ColorScheme colorScheme) {
+  Widget _buildBalanceMeter(BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
     final balanceAsync = ref.watch(dailyCalorieBalanceProvider);
     
     return Card(
@@ -349,9 +350,9 @@ class BalanceDashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             balanceAsync.when(
-              data: (balance) => _buildBalanceVisualization(balance, colorScheme),
+              data: (balance) => _buildBalanceVisualization(context, balance, colorScheme),
               loading: () => _buildLoadingState(),
-              error: (_, __) => _buildErrorState(),
+              error: (_, __) => _buildErrorState(colorScheme),
             ),
           ],
         ),
@@ -359,7 +360,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBalanceVisualization(CalorieBalance balance, ColorScheme colorScheme) {
+  Widget _buildBalanceVisualization(BuildContext context, CalorieBalance balance, ColorScheme colorScheme) {
     final normalizedBalance = (balance.netCalories / 1000).clamp(-1.0, 1.0);
     final meterPosition = (normalizedBalance + 1) / 2; // Convert to 0-1 range
     
@@ -464,7 +465,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildGoalProgress(WidgetRef ref, ColorScheme colorScheme) {
+  Widget _buildGoalProgress(BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
     // Use demo goal for now
     final demoGoal = ref.watch(demoGoalProvider);
     ref.read(currentGoalProvider.notifier).state = demoGoal;
@@ -533,7 +534,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
                 );
               },
               loading: () => _buildLoadingState(),
-              error: (_, __) => _buildErrorState(),
+              error: (_, __) => _buildErrorState(colorScheme),
             ),
           ],
         ),
@@ -712,7 +713,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActivitySummary(WidgetRef ref, ColorScheme colorScheme) {
+  Widget _buildActivitySummary(BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
     final activityStats = ref.watch(todayActivityStatsProvider);
     
     return Card(
@@ -754,7 +755,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
             activityStats.when(
               data: (stats) => _buildActivityStatsGrid(stats, colorScheme),
               loading: () => _buildLoadingState(),
-              error: (_, __) => _buildErrorState(),
+              error: (_, __) => _buildErrorState(colorScheme),
             ),
           ],
         ),
@@ -798,7 +799,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildNutritionSummary(WidgetRef ref, ColorScheme colorScheme) {
+  Widget _buildNutritionSummary(BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
     final todayNutrition = ref.watch(todayNutritionProvider);
     
     return Card(
@@ -845,7 +846,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
                 return _buildNutritionStatsGrid(nutrition, colorScheme);
               },
               loading: () => _buildLoadingState(),
-              error: (_, __) => _buildErrorState(),
+              error: (_, __) => _buildErrorState(colorScheme),
             ),
           ],
         ),
@@ -939,7 +940,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHealthMetrics(WidgetRef ref, ColorScheme colorScheme) {
+  Widget _buildHealthMetrics(BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
     final todayMetrics = ref.watch(todayMetricsProvider);
     
     return Card(
@@ -965,9 +966,9 @@ class BalanceDashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             todayMetrics.when(
-              data: (metrics) => _buildMetricsContent(ref, metrics, colorScheme),
+              data: (metrics) => _buildMetricsContent(context, ref, metrics, colorScheme),
               loading: () => _buildLoadingState(),
-              error: (_, __) => _buildErrorState(),
+              error: (_, __) => _buildErrorState(colorScheme),
             ),
           ],
         ),
@@ -975,7 +976,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMetricsContent(WidgetRef ref, UserMetrics? metrics, ColorScheme colorScheme) {
+  Widget _buildMetricsContent(BuildContext context, WidgetRef ref, UserMetrics? metrics, ColorScheme colorScheme) {
     return Column(
       children: [
         Row(
@@ -987,7 +988,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
                 'lbs',
                 Icons.scale_rounded,
                 AppColors.proteinPurple,
-                () => _showWeightDialog(ref),
+                () => _showWeightDialog(context, ref),
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
@@ -998,7 +999,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
                 'L',
                 Icons.water_drop_rounded,
                 AppColors.carbsBlue,
-                () => _showWaterDialog(ref),
+                () => _showWaterDialog(context, ref),
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
@@ -1009,7 +1010,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
                 'hrs',
                 Icons.bedtime_rounded,
                 AppColors.primaryGreen,
-                () => _showSleepDialog(ref),
+                () => _showSleepDialog(context, ref),
               ),
             ),
           ],
@@ -1123,7 +1124,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
     );
   }
 
-  void _showWeightDialog(WidgetRef ref) {
+  void _showWeightDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
     
     showDialog(
@@ -1159,7 +1160,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
     );
   }
 
-  void _showWaterDialog(WidgetRef ref) {
+  void _showWaterDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
     
     showDialog(
@@ -1195,7 +1196,7 @@ class BalanceDashboardScreen extends ConsumerWidget {
     );
   }
 
-  void _showSleepDialog(WidgetRef ref) {
+  void _showSleepDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
     
     showDialog(
@@ -1304,14 +1305,14 @@ class BalanceDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildErrorState() {
+  Widget _buildErrorState(ColorScheme colorScheme) {
     return Container(
       height: 100,
       child: Center(
         child: Text(
           'Error loading data',
           style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.error,
+            color: colorScheme.error,
           ),
         ),
       ),
