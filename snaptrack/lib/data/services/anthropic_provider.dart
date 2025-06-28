@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'ai_provider.dart';
 import 'secure_storage_fallback.dart';
 
-class AnthropicProvider extends AIProvider {
+class AnthropicProvider extends AIProvider implements TextAnalysisCapable {
   static const String _apiKeyKey = 'anthropic_api_key';
   static const String _baseUrl = 'https://api.anthropic.com/v1';
   
@@ -459,5 +459,193 @@ Return ONLY a valid JSON object with no additional text, markdown formatting, or
     } catch (e) {
       throw Exception('Analysis failed: $e');
     }
+  }
+
+  @override
+  Future<TextAnalysisResult> analyzeTextDescription(String description) async {
+    final apiKey = await getApiKey();
+    
+    try {
+      if (apiKey == null || apiKey.isEmpty) {
+        // Return mock data if no API key is configured
+        print('Anthropic: No API key configured, using mock data for text analysis');
+        return _getMockTextAnalysis(description);
+      }
+
+      // Make real API call to Anthropic
+      final response = await _dio.post(
+        '/messages',
+        options: Options(
+          headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'Content-Type': 'application/json',
+          },
+        ),
+        data: {
+          'model': 'claude-3-5-sonnet-20241022',
+          'max_tokens': 1000,
+          'messages': [
+            {
+              'role': 'user',
+              'content': '''You are a nutrition expert. Analyze the following food description and provide 2-3 food suggestions with estimated portions, units, and nutritional information.
+
+Food description: $description
+
+IMPORTANT: Respond with valid JSON only, no additional text or markdown formatting.
+
+For each food suggestion, provide:
+1. Name: Specific, clear food name
+2. Weight: Estimated weight in grams
+3. Portion data: Quantity and appropriate unit (e.g., 1 cup, 2 tbsp, 3 oz)
+4. Nutrition for the total portion
+
+Common units to use:
+- Liquids: cup, ml, dl, l, glass, bottle, mug
+- Powders: tsp, tbsp, cup, scoop
+- Solids: piece, slice, oz, g, portion, serving
+- Bulk: handful, cup, bowl
+
+Response format:
+{
+  "suggestions": [
+    {
+      "name": "Food name",
+      "weight": estimated_weight_in_grams,
+      "calories": calories_for_this_portion,
+      "protein": protein_for_this_portion,
+      "carbs": carbs_for_this_portion,
+      "fat": fat_for_this_portion,
+      "quantity": number,
+      "unitId": "unit_id",
+      "unitDisplayName": "unit display name",
+      "description": "Brief explanation including portion size"
+    }
+  ]
+}'''
+            }
+          ],
+        },
+      );
+
+      final content = response.data['content'][0]['text'];
+      
+      // Extract JSON from response
+      final jsonStartIndex = content.indexOf('{');
+      if (jsonStartIndex == -1) {
+        throw Exception('No JSON found in response');
+      }
+      
+      // Find the matching closing brace
+      int braceCount = 0;
+      int jsonEndIndex = -1;
+      for (int i = jsonStartIndex; i < content.length; i++) {
+        if (content[i] == '{') braceCount++;
+        if (content[i] == '}') braceCount--;
+        if (braceCount == 0) {
+          jsonEndIndex = i + 1;
+          break;
+        }
+      }
+      
+      if (jsonEndIndex == -1) {
+        throw Exception('Incomplete JSON in response');
+      }
+      
+      final jsonString = content.substring(jsonStartIndex, jsonEndIndex);
+      final parsedResponse = jsonDecode(jsonString);
+      
+      final suggestions = (parsedResponse['suggestions'] as List)
+          .map((item) => FoodSuggestion.fromJson(item))
+          .toList();
+
+      return TextAnalysisResult(
+        suggestions: suggestions,
+        explanation: 'Analysis provided by Anthropic Claude',
+      );
+
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        throw Exception('Invalid API key');
+      } else if (e.response?.statusCode == 429) {
+        throw Exception('Rate limit exceeded');
+      } else {
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      throw Exception('Text analysis failed: $e');
+    }
+  }
+
+  TextAnalysisResult _getMockTextAnalysis(String description) {
+    // Keyword-based mock suggestions
+    final lowerDesc = description.toLowerCase();
+    final suggestions = <FoodSuggestion>[];
+
+    if (lowerDesc.contains('porridge') || lowerDesc.contains('oatmeal')) {
+      suggestions.add(FoodSuggestion(
+        name: 'Oatmeal Porridge',
+        calories: 150,
+        protein: 5.0,
+        carbs: 27.0,
+        fat: 3.0,
+        estimatedWeight: 240,
+        quantity: 1,
+        unitId: 'cup_cooked',
+        unitDisplayName: 'cup (cooked)',
+        description: 'Estimated 1 cup cooked porridge',
+      ));
+    }
+    
+    if (lowerDesc.contains('salad')) {
+      suggestions.add(FoodSuggestion(
+        name: 'Garden Salad',
+        calories: 120,
+        protein: 3.0,
+        carbs: 15.0,
+        fat: 7.0,
+        estimatedWeight: 200,
+        quantity: 1,
+        unitId: 'bowl',
+        unitDisplayName: 'bowl',
+        description: 'Estimated 1 medium bowl',
+      ));
+    }
+
+    if (lowerDesc.contains('protein shake') || lowerDesc.contains('smoothie')) {
+      suggestions.add(FoodSuggestion(
+        name: 'Protein Shake',
+        calories: 200,
+        protein: 25.0,
+        carbs: 15.0,
+        fat: 5.0,
+        estimatedWeight: 350,
+        quantity: 1,
+        unitId: 'glass',
+        unitDisplayName: 'glass',
+        description: 'Estimated 1 glass (350ml)',
+      ));
+    }
+
+    // Default suggestion if no keywords match
+    if (suggestions.isEmpty) {
+      suggestions.add(FoodSuggestion(
+        name: 'Mixed Food Item',
+        calories: 250,
+        protein: 15,
+        carbs: 30,
+        fat: 8,
+        estimatedWeight: 150,
+        quantity: 1,
+        unitId: 'serving',
+        unitDisplayName: 'serving',
+        description: 'Generic serving estimation',
+      ));
+    }
+
+    return TextAnalysisResult(
+      suggestions: suggestions,
+      explanation: 'Mock analysis for testing purposes',
+    );
   }
 }

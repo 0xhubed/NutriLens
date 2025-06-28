@@ -565,7 +565,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      entry.name,
+                      entry.portions.isNotEmpty
+                          ? '${entry.name} (${entry.portionSummary})'
+                          : entry.name,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -696,7 +698,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           ? ListTile(
               leading: _buildFoodImage(entry.imageBase64),
               title: Text(
-                entry.name,
+                entry.portions.isNotEmpty
+                    ? '${entry.name} (${entry.portionSummary})'
+                    : entry.name,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               subtitle: Column(
@@ -791,7 +795,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               child: ListTile(
                 leading: _buildFoodImage(entry.imageBase64),
                 title: Text(
-                  entry.name,
+                  entry.portions.isNotEmpty
+                      ? '${entry.name} (${entry.portionSummary})'
+                      : entry.name,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 subtitle: Column(

@@ -51,6 +51,21 @@ class FoodAnalysisNotifier extends StateNotifier<AsyncValue<FoodAnalysis?>> {
       state = AsyncValue.error(error, stackTrace);
     }
   }
+
+  Future<void> analyzeImageWithPortions(File imageFile, {String? hint}) async {
+    state = const AsyncValue.loading();
+    
+    try {
+      final result = await _aiManager.analyzeWithPortionsAndFallback(
+        imageFile, 
+        userHint: hint, 
+        requestPortions: true,
+      );
+      state = AsyncValue.data(result);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
   
   void reset() {
     state = const AsyncValue.data(null);

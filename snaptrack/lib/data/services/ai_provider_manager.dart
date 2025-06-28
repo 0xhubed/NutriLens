@@ -80,7 +80,7 @@ class AIProviderManager {
   }
 
   Future<FoodAnalysis> analyzeWithFallback(File imageFile, {String? userHint}) async {
-    return analyzeWithPortionsAndFallback(imageFile, userHint: userHint, requestPortions: false);
+    return analyzeWithPortionsAndFallback(imageFile, userHint: userHint, requestPortions: true);
   }
 
   Future<FoodAnalysis> analyzeWithPortionsAndFallback(

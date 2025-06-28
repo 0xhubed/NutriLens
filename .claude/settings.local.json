@@ -28,7 +28,8 @@
       "Bash(rg:*)",
       "Bash(sed:*)",
       "Bash(timeout 10 flutter run --debug)",
-      "Bash(dart analyze:*)"
+      "Bash(dart analyze:*)",
+      "Bash(dart:*)"
     ],
     "deny": []
   }

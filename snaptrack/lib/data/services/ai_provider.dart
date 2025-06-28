@@ -140,6 +140,11 @@ class FoodSuggestion {
   final double fat;
   final double? estimatedWeight;
   final String? description;
+  
+  // Unit information
+  final double? quantity;
+  final String? unitId;
+  final String? unitDisplayName;
 
   FoodSuggestion({
     required this.name,
@@ -149,6 +154,9 @@ class FoodSuggestion {
     required this.fat,
     this.estimatedWeight,
     this.description,
+    this.quantity,
+    this.unitId,
+    this.unitDisplayName,
   });
 
   factory FoodSuggestion.fromJson(Map<String, dynamic> json) {
@@ -160,7 +168,20 @@ class FoodSuggestion {
       fat: (json['fat'] ?? 0).toDouble(),
       estimatedWeight: json['weight'] != null ? (json['weight'] as num).toDouble() : null,
       description: json['description'],
+      quantity: json['quantity'] != null ? (json['quantity'] as num).toDouble() : null,
+      unitId: json['unitId'],
+      unitDisplayName: json['unitDisplayName'],
     );
+  }
+  
+  String get portionDescription {
+    if (quantity != null && unitDisplayName != null) {
+      final quantityStr = quantity == quantity!.toInt() 
+          ? quantity!.toInt().toString() 
+          : quantity!.toStringAsFixed(1);
+      return '$quantityStr $unitDisplayName';
+    }
+    return estimatedWeight != null ? '${estimatedWeight!.toStringAsFixed(0)}g' : '';
   }
 }
 

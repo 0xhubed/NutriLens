@@ -133,10 +133,13 @@ class AnalyticsService {
       totalFat += dayNutrition.totalFat;
     }
 
-    // Calculate top foods
+    // Calculate top foods with portion information
     final Map<String, int> foodCounts = {};
     for (final entry in entries) {
-      foodCounts[entry.name] = (foodCounts[entry.name] ?? 0) + 1;
+      final foodKey = entry.portions.isNotEmpty
+          ? '${entry.name} (${entry.portionSummary})'
+          : entry.name;
+      foodCounts[foodKey] = (foodCounts[foodKey] ?? 0) + 1;
     }
     
     final topFoods = Map.fromEntries(

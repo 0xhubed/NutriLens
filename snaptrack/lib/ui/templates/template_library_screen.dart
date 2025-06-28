@@ -476,7 +476,14 @@ class _TemplateLibraryScreenState extends ConsumerState<TemplateLibraryScreen>
                 const Text('Items:', style: TextStyle(fontWeight: FontWeight.bold)),
                 ...template.items.map((item) => Padding(
                   padding: const EdgeInsets.only(left: 8, top: 4),
-                  child: Text('• ${item.name} (${item.calories.toInt()} cal)'),
+                  child: Text('• ${item.name}${item.portion != null ? ' (${item.portion})' : ''} - ${item.calories.toInt()} cal'),
+                )),
+              ],
+              if (template.usePortions && template.ingredients.isNotEmpty) ...[
+                const Text('Ingredients:', style: TextStyle(fontWeight: FontWeight.bold)),
+                ...template.ingredients.map((ingredient) => Padding(
+                  padding: const EdgeInsets.only(left: 8, top: 4),
+                  child: Text('• ${ingredient.quantity.toString()} ${ingredient.unitDisplayName} ${ingredient.name}'),
                 )),
               ],
             ],

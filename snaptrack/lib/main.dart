@@ -9,6 +9,7 @@ import 'data/models/activity_entry.dart';
 import 'data/models/daily_nutrition.dart';
 import 'data/models/food_entry.dart';
 import 'data/models/meal_template.dart';
+import 'data/models/measurement_unit.dart';
 import 'data/models/user_metrics.dart';
 import 'data/providers/activity_providers.dart';
 import 'data/providers/metrics_providers.dart';
@@ -29,6 +30,9 @@ void main() async {
       MealTemplateSchema,
       ActivityEntrySchema,
       UserMetricsSchema,
+      MeasurementUnitSchema,
+      FoodConversionSchema,
+      UserMeasurementPreferenceSchema,
     ],
     directory: dir.path,
   );

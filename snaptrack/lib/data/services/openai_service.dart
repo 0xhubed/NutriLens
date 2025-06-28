@@ -11,7 +11,7 @@ class OpenAIProvider extends AIProvider implements TextAnalysisCapable {
   
   final Dio _dio = Dio();
   
-  OpenAIService() {
+  OpenAIProvider() {
     _dio.options.baseUrl = _baseUrl;
     _dio.options.headers = {
       'Content-Type': 'application/json',
@@ -277,14 +277,21 @@ Return ONLY a valid JSON object with no additional text, markdown formatting, or
           'messages': [
             {
               'role': 'system',
-              'content': '''You are a nutrition expert. Analyze the food description and provide 2-3 food suggestions with estimated weights and nutritional information.
+              'content': '''You are a nutrition expert. Analyze the food description and provide 2-3 food suggestions with estimated portions, units, and nutritional information.
 
 IMPORTANT: Respond with valid JSON only, no additional text.
 
-For each food suggestion, estimate:
+For each food suggestion, provide:
 1. Name: Specific, clear food name
-2. Weight: Estimated weight in grams based on typical portions
-3. Nutrition per 100g, then scale to estimated weight
+2. Weight: Estimated weight in grams
+3. Portion data: Quantity and appropriate unit (e.g., 1 cup, 2 tbsp, 3 oz)
+4. Nutrition for the total portion
+
+Common units to use:
+- Liquids: cup, ml, dl, l, glass, bottle, mug
+- Powders: tsp, tbsp, cup, scoop
+- Solids: piece, slice, oz, g, portion, serving
+- Bulk: handful, cup, bowl
 
 Response format:
 {
@@ -292,11 +299,14 @@ Response format:
     {
       "name": "Food name",
       "weight": estimated_weight_in_grams,
-      "calories": calories_for_this_weight,
-      "protein": protein_for_this_weight,
-      "carbs": carbs_for_this_weight,
-      "fat": fat_for_this_weight,
-      "description": "Brief explanation of estimation"
+      "calories": calories_for_this_portion,
+      "protein": protein_for_this_portion,
+      "carbs": carbs_for_this_portion,
+      "fat": fat_for_this_portion,
+      "quantity": number,
+      "unitId": "unit_id",
+      "unitDisplayName": "unit display name",
+      "description": "Brief explanation including portion size"
     }
   ]
 }'''
@@ -353,7 +363,10 @@ Response format:
         carbs: 0,
         fat: 5.0,
         estimatedWeight: 150,
-        description: 'Estimated 150g portion',
+        quantity: 1,
+        unitId: 'serving',
+        unitDisplayName: 'serving',
+        description: 'Estimated 1 serving (150g)',
       ));
     }
     
@@ -365,7 +378,10 @@ Response format:
         carbs: 28,
         fat: 0.3,
         estimatedWeight: 100,
-        description: 'Estimated 1/2 cup portion',
+        quantity: 0.5,
+        unitId: 'cup',
+        unitDisplayName: 'cup',
+        description: 'Estimated 1/2 cup cooked rice',
       ));
     }
 
@@ -377,7 +393,10 @@ Response format:
         carbs: 25,
         fat: 0.3,
         estimatedWeight: 182,
-        description: 'Estimated medium apple',
+        quantity: 1,
+        unitId: 'piece',
+        unitDisplayName: 'medium apple',
+        description: 'Estimated 1 medium apple',
       ));
     }
 
@@ -390,7 +409,10 @@ Response format:
         carbs: 30,
         fat: 8,
         estimatedWeight: 150,
-        description: 'Generic estimation',
+        quantity: 1,
+        unitId: 'portion',
+        unitDisplayName: 'portion',
+        description: 'Generic 1 portion estimation',
       ));
     }
 

@@ -1213,37 +1213,73 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   }
   
   void _startAnalysis() {
-    ref.read(foodAnalysisProvider.notifier).analyzeImage(widget.imageFile);
+    // Use portion-aware analysis by default to get portion information from first call
+    ref.read(foodAnalysisProvider.notifier).analyzeImageWithPortions(widget.imageFile);
   }
   
   void _updateFormFields(FoodAnalysis result) {
-    _nameController.text = result.name;
-    _caloriesController.text = result.calories.toStringAsFixed(0);
-    _proteinController.text = result.protein.toStringAsFixed(1);
-    _carbsController.text = result.carbs.toStringAsFixed(1);
-    _fatController.text = result.fat.toStringAsFixed(1);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              Icons.check_circle_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            const Text('Form updated with AI analysis'),
-          ],
+    // Check if AI provided portion data
+    if (result.hasPortionData && result.detectedPortions != null && result.detectedPortions!.isNotEmpty) {
+      print('🍽️ AI provided ${result.detectedPortions!.length} portion(s), enabling portion mode');
+      
+      setState(() {
+        _usePortionMode = true;
+        _portions = List.from(result.detectedPortions!);
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Icons.restaurant_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text('Found ${result.detectedPortions!.length} portion(s) - using smart measurement mode'),
+            ],
+          ),
+          backgroundColor: AppColors.primaryGreen,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.medium,
+          ),
+          margin: const EdgeInsets.all(AppSpacing.md),
         ),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.medium,
+      );
+    } else {
+      // Fallback to traditional weight-based input
+      print('📏 No portion data from AI, using traditional weight input');
+      
+      _nameController.text = result.name;
+      _caloriesController.text = result.calories.toStringAsFixed(0);
+      _proteinController.text = result.protein.toStringAsFixed(1);
+      _carbsController.text = result.carbs.toStringAsFixed(1);
+      _fatController.text = result.fat.toStringAsFixed(1);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                Icons.check_circle_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              const Text('Form updated with AI analysis'),
+            ],
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.medium,
+          ),
+          margin: const EdgeInsets.all(AppSpacing.md),
         ),
-        margin: const EdgeInsets.all(AppSpacing.md),
-      ),
-    );
+      );
+    }
   }
   
   void _retryAnalysis() {
@@ -1450,7 +1486,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
     setState(() {
       _showAlternatives = false;
     });
-    ref.read(foodAnalysisProvider.notifier).analyzeImageWithHint(widget.imageFile, hint);
+    // Use portion-aware analysis when re-analyzing with hints to maintain portion data
+    ref.read(foodAnalysisProvider.notifier).analyzeImageWithPortions(widget.imageFile, hint: hint);
   }
   
   void _showPartialCorrectionDialog(FoodAnalysis originalResult) {

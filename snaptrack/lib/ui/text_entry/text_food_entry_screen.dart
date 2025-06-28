@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/models/food_entry.dart';
+import '../../data/models/measurement_unit.dart';
 import '../../data/services/ai_provider.dart';
 import '../../data/services/database_service.dart';
 import '../../data/providers/analysis_providers.dart';
 import '../../data/services/analytics_service.dart';
 import '../../data/providers/nutrition_providers.dart';
 import '../common/date_time_picker_widget.dart';
+import '../widgets/natural_language_input_widget.dart';
 
 class TextFoodEntryScreen extends ConsumerStatefulWidget {
   const TextFoodEntryScreen({super.key});
@@ -19,12 +21,12 @@ class TextFoodEntryScreen extends ConsumerStatefulWidget {
 
 class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
   final _textController = TextEditingController();
-  final _weightController = TextEditingController();
   bool _isAnalyzing = false;
-  bool _includeWeight = false;
+  bool _usePortionInput = true; // New: toggle between simple text and portion input
   List<FoodSuggestion> _suggestions = [];
   FoodSuggestion? _selectedSuggestion;
   late DateTime _selectedDateTime;
+  List<FoodPortion> _specifiedPortions = []; // Store user-specified portions
 
   void _invalidateAnalyticsProviders(DateTime affectedDate) {
     // Always invalidate global providers
@@ -61,7 +63,6 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
   @override
   void dispose() {
     _textController.dispose();
-    _weightController.dispose();
     super.dispose();
   }
 
@@ -83,74 +84,45 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Describe your food',
-              style: Theme.of(context).textTheme.titleLarge,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Describe your food',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                Switch(
+                  value: _usePortionInput,
+                  onChanged: (value) {
+                    setState(() {
+                      _usePortionInput = value;
+                      _textController.clear();
+                      _specifiedPortions.clear();
+                      _suggestions.clear();
+                      _selectedSuggestion = null;
+                    });
+                  },
+                ),
+                Text(
+                  'Portions',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Text(
-              'Examples: "Grilled chicken breast with rice", "Large apple", "1 cup oatmeal with banana"',
+              _usePortionInput 
+                  ? 'Examples: "2 cups rice", "1 tbsp olive oil", "3 medium apples"'
+                  : 'Examples: "Grilled chicken breast with rice", "Large apple", "oatmeal with banana"',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Colors.grey[600],
               ),
             ),
             const SizedBox(height: 16),
             
-            // Text input
-            TextField(
-              controller: _textController,
-              decoration: const InputDecoration(
-                labelText: 'Food description',
-                hintText: 'e.g., Grilled salmon with vegetables',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.restaurant),
-              ),
-              maxLines: 3,
-              onChanged: (value) {
-                setState(() {
-                  _suggestions.clear();
-                  _selectedSuggestion = null;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            
-            // Weight section
-            Row(
-              children: [
-                Checkbox(
-                  value: _includeWeight,
-                  onChanged: (value) {
-                    setState(() {
-                      _includeWeight = value ?? false;
-                      if (!_includeWeight) {
-                        _weightController.clear();
-                      }
-                    });
-                  },
-                ),
-                Expanded(
-                  child: Text(
-                    'Include weight for better accuracy',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              ],
-            ),
-            if (_includeWeight) ...[
-              const SizedBox(height: 8),
-              TextField(
-                controller: _weightController,
-                decoration: const InputDecoration(
-                  labelText: 'Weight (grams)',
-                  hintText: 'e.g., 150',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.scale),
-                  suffixText: 'g',
-                ),
-                keyboardType: TextInputType.number,
-              ),
-            ],
+            // Text input or Portion input
+            _usePortionInput ? _buildPortionInput() : _buildTextInput(),
             const SizedBox(height: 24),
             
             // Date and Time Selection
@@ -170,7 +142,9 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                onPressed: _textController.text.trim().isEmpty || _isAnalyzing
+                onPressed: (_usePortionInput && _specifiedPortions.isEmpty) ||
+                    (!_usePortionInput && _textController.text.trim().isEmpty) ||
+                    _isAnalyzing
                     ? null
                     : _analyzeText,
                 child: _isAnalyzing
@@ -229,13 +203,28 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
                                 color: Colors.grey[600],
                               ),
                             ),
-                            if (suggestion.estimatedWeight != null)
+                            if (suggestion.portionDescription.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  suggestion.portionDescription,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            if (suggestion.description != null)
                               Text(
-                                'Estimated weight: ${suggestion.estimatedWeight!.toStringAsFixed(0)}g',
+                                suggestion.description!,
                                 style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.blue[600],
-                                  fontStyle: FontStyle.italic,
+                                  fontSize: 11,
+                                  color: Colors.grey[600],
                                 ),
                               ),
                           ],
@@ -300,9 +289,6 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
   }
 
   Future<void> _analyzeText() async {
-    final description = _textController.text.trim();
-    if (description.isEmpty) return;
-
     setState(() {
       _isAnalyzing = true;
       _suggestions.clear();
@@ -311,11 +297,18 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
 
     try {
       final aiManager = ref.read(aiProviderManagerProvider);
-      final weightHint = _includeWeight && _weightController.text.isNotEmpty
-          ? ' (weight: ${_weightController.text}g)'
-          : '';
+      String fullDescription;
       
-      final fullDescription = description + weightHint;
+      if (_usePortionInput && _specifiedPortions.isNotEmpty) {
+        // Build description from specified portions
+        fullDescription = _specifiedPortions.map((p) => 
+            '${p.formattedQuantity} of ${p.foodName}').join(', ');
+      } else {
+        // Use simple text description
+        final description = _textController.text.trim();
+        if (description.isEmpty) return;
+        fullDescription = description;
+      }
       
       // Call AI provider to analyze text description
       final result = await aiManager.analyzeTextDescription(fullDescription);
@@ -345,15 +338,8 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
     try {
       final suggestion = _selectedSuggestion!;
       
-      // Create food entry with weight consideration
-      final userWeight = _includeWeight && _weightController.text.isNotEmpty
-          ? double.tryParse(_weightController.text)
-          : null;
-      
-      // Calculate weight-adjusted nutrition
-      final baseWeight = suggestion.estimatedWeight ?? 100.0; // default to 100g
-      final actualWeight = userWeight ?? baseWeight;
-      final weightMultiplier = actualWeight / baseWeight;
+      // Use nutrition values as provided by AI (already portion-adjusted)
+      const double weightMultiplier = 1.0; // No additional weight scaling needed
       
       final entry = FoodEntry()
         ..name = suggestion.name
@@ -365,9 +351,43 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
         ..timestamp = _selectedDateTime
         ..mealType = FoodEntry.suggestMealTypeByTime(_selectedDateTime)
         ..estimatedWeight = suggestion.estimatedWeight
-        ..userWeight = userWeight
         ..aiProvider = ref.read(aiProviderManagerProvider).activeProvider?.providerId
-        ..notes = 'Added via text: "${_textController.text.trim()}"';
+        ..notes = _usePortionInput && _specifiedPortions.isNotEmpty
+            ? 'Added with portions: ${_specifiedPortions.map((p) => p.formattedQuantity).join(", ")}'
+            : 'Added via text: "${_textController.text.trim()}"';
+      
+      // Add portion information - prefer user-specified portions over AI suggestions
+      if (_usePortionInput && _specifiedPortions.isNotEmpty) {
+        entry.usePortions = true;
+        entry.portions = _specifiedPortions.map((portion) => 
+          FoodPortion.create(
+            foodName: portion.foodName,
+            quantity: portion.quantity,
+            unitId: portion.unitId,
+            unitDisplayName: portion.unitDisplayName,
+            estimatedGrams: portion.estimatedGrams,
+            calories: suggestion.calories * (portion.effectiveGrams / (suggestion.estimatedWeight ?? 100)),
+            protein: suggestion.protein * (portion.effectiveGrams / (suggestion.estimatedWeight ?? 100)),
+            carbs: suggestion.carbs * (portion.effectiveGrams / (suggestion.estimatedWeight ?? 100)),
+            fat: suggestion.fat * (portion.effectiveGrams / (suggestion.estimatedWeight ?? 100)),
+          )
+        ).toList();
+      } else if (suggestion.quantity != null && suggestion.unitId != null && suggestion.unitDisplayName != null) {
+        entry.usePortions = true;
+        entry.portions = [
+          FoodPortion.create(
+            foodName: suggestion.name,
+            quantity: suggestion.quantity!,
+            unitId: suggestion.unitId!,
+            unitDisplayName: suggestion.unitDisplayName!,
+            estimatedGrams: suggestion.estimatedWeight,
+            calories: suggestion.calories,
+            protein: suggestion.protein,
+            carbs: suggestion.carbs,
+            fat: suggestion.fat,
+          ),
+        ];
+      }
 
       final dbService = ref.read(databaseServiceProvider);
       await dbService.saveFoodEntry(entry);
@@ -396,6 +416,66 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
         );
       }
     }
+  }
+
+  Widget _buildPortionInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        NaturalLanguageInputWidget(
+          onPortionParsed: (portion) {
+            setState(() {
+              _specifiedPortions.add(portion);
+            });
+          },
+          hintText: 'e.g., "2 cups rice" or "1 tbsp olive oil"',
+          showExamples: false,
+        ),
+        const SizedBox(height: 16),
+        if (_specifiedPortions.isNotEmpty) ...[
+          Text(
+            'Specified Portions:',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          ...(_specifiedPortions.map((portion) => Card(
+            child: ListTile(
+              leading: const Icon(Icons.restaurant),
+              title: Text(portion.foodName),
+              subtitle: Text(portion.formattedQuantity),
+              trailing: IconButton(
+                icon: const Icon(Icons.remove_circle),
+                onPressed: () {
+                  setState(() {
+                    _specifiedPortions.remove(portion);
+                  });
+                },
+              ),
+            ),
+          ))),
+          const SizedBox(height: 16),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTextInput() {
+    return TextField(
+      controller: _textController,
+      decoration: const InputDecoration(
+        labelText: 'Food description',
+        hintText: 'e.g., Grilled salmon with vegetables',
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.restaurant),
+      ),
+      maxLines: 3,
+      onChanged: (value) {
+        setState(() {
+          _suggestions.clear();
+          _selectedSuggestion = null;
+        });
+      },
+    );
   }
 }
 

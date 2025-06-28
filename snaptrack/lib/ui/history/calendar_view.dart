@@ -355,7 +355,9 @@ class _CalendarViewState extends ConsumerState<CalendarView> {
               children: [
                 Expanded(
                   child: Text(
-                    entry.name,
+                    entry.portions.isNotEmpty
+                        ? '${entry.name} (${entry.portionSummary})'
+                        : entry.name,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),

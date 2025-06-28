@@ -28,10 +28,50 @@ final commonUnitsProvider = Provider<List<MeasurementUnit>>((ref) {
   return MeasurementDatabase.getCommonUnits();
 });
 
-// Suggested units for specific food
+// Static fallback for unit suggestions (doesn't require database)
+final staticSuggestedUnitsProvider = Provider.family<List<MeasurementUnit>, String>((ref, foodName) {
+  return MeasurementDatabase.getSuggestedUnitsForFood(foodName, null);
+});
+
+// Suggested units for specific food (with smart features if database available)
 final suggestedUnitsProvider = FutureProvider.family<List<MeasurementUnit>, String>((ref, foodName) async {
-  final conversionService = ref.watch(conversionServiceProvider);
-  return await conversionService.getSuggestedUnits(foodName);
+  try {
+    final conversionService = ref.watch(conversionServiceProvider);
+    final result = await conversionService.getSuggestedUnits(foodName);
+    print('✓ Successfully loaded ${result.length} suggested units for "$foodName"');
+    return result;
+  } catch (e, stack) {
+    // Fallback to static suggestions if service fails
+    print('❌ Error loading suggested units for "$foodName": $e');
+    print('Stack: $stack');
+    
+    try {
+      final fallback = ref.read(staticSuggestedUnitsProvider(foodName));
+      print('✓ Using static fallback: ${fallback.length} units');
+      return fallback;
+    } catch (fallbackError) {
+      print('❌ Static fallback also failed: $fallbackError');
+      // Final fallback - basic units
+      final basic = [
+        MeasurementUnit.create(
+          unitId: 'g',
+          displayName: 'Gram',
+          shortName: 'g',
+          category: MeasurementCategory.solid,
+          gramEquivalent: 1.0,
+        ),
+        MeasurementUnit.create(
+          unitId: 'ml',
+          displayName: 'Milliliter', 
+          shortName: 'ml',
+          category: MeasurementCategory.liquid,
+          gramEquivalent: 1.0,
+        ),
+      ];
+      print('✓ Using basic fallback: ${basic.length} units');
+      return basic;
+    }
+  }
 });
 
 // Unit search
@@ -44,12 +84,34 @@ final filteredUnitsProvider = Provider<List<MeasurementUnit>>((ref) {
 
 // Conversion result for specific request
 final conversionResultProvider = FutureProvider.family<ConversionResult, ConversionRequest>((ref, request) async {
-  final conversionService = ref.watch(conversionServiceProvider);
-  return await conversionService.convertToGrams(
-    quantity: request.quantity,
-    unitId: request.unitId,
-    foodName: request.foodName,
-  );
+  try {
+    final conversionService = ref.watch(conversionServiceProvider);
+    return await conversionService.convertToGrams(
+      quantity: request.quantity,
+      unitId: request.unitId,
+      foodName: request.foodName,
+    );
+  } catch (e) {
+    // Fallback to basic conversion if service fails
+    print('Error converting ${request.quantity} ${request.unitId} of ${request.foodName}: $e');
+    
+    // Try to get unit from static database
+    final unit = MeasurementDatabase.getUnitById(request.unitId);
+    if (unit?.gramEquivalent != null) {
+      return ConversionResult(
+        grams: request.quantity * unit!.gramEquivalent!,
+        confidence: ConversionConfidence.medium,
+        source: 'Fallback conversion',
+      );
+    }
+    
+    // Return unknown conversion
+    return ConversionResult(
+      grams: 0,
+      confidence: ConversionConfidence.unknown,
+      source: 'Service unavailable',
+    );
+  }
 });
 
 // Conversion confidence for specific unit and food

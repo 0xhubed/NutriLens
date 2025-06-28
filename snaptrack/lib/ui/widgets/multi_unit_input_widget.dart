@@ -5,8 +5,10 @@ import '../../core/theme/app_theme.dart';
 import '../../data/models/measurement_unit.dart';
 import '../../data/providers/measurement_providers.dart';
 import '../../data/providers/measurement_guide_providers.dart';
+import '../../data/providers/measurement_fallback_provider.dart';
 import '../../data/services/conversion_service.dart';
 import '../screens/measurement_guide_screen.dart';
+import 'safe_unit_dropdown.dart';
 
 class MultiUnitInputWidget extends ConsumerStatefulWidget {
   final String foodName;
@@ -246,8 +248,22 @@ class _PortionInputRowState extends ConsumerState<_PortionInputRow> {
     _quantityController = TextEditingController(text: _portion.quantity.toString());
     _foodNameController = TextEditingController(text: _portion.foodName);
     
+    // Initialize selected unit from portion
+    _initializeSelectedUnit();
+    
     _quantityController.addListener(_onQuantityChanged);
     _foodNameController.addListener(_onFoodNameChanged);
+  }
+  
+  void _initializeSelectedUnit() {
+    // Try to get the unit from the measurement database
+    try {
+      final fallbackService = ref.read(fallbackMeasurementProvider);
+      _selectedUnit = fallbackService.getUnitById(_portion.unitId);
+    } catch (e) {
+      // If that fails, we'll let the dropdown handle it
+      _selectedUnit = null;
+    }
   }
 
   @override
@@ -261,7 +277,6 @@ class _PortionInputRowState extends ConsumerState<_PortionInputRow> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final suggestedUnits = ref.watch(suggestedUnitsProvider(_portion.foodName));
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -322,13 +337,22 @@ class _PortionInputRowState extends ConsumerState<_PortionInputRow> {
               ),
               const SizedBox(width: AppSpacing.sm),
               
-              // Unit dropdown
+              // Unit dropdown - using safe implementation
               Expanded(
                 flex: 3,
-                child: suggestedUnits.when(
-                  data: (units) => _buildUnitDropdown(units, colorScheme),
-                  loading: () => _buildLoadingDropdown(colorScheme),
-                  error: (_, __) => _buildErrorDropdown(colorScheme),
+                child: SafeUnitDropdown(
+                  foodName: _portion.foodName,
+                  currentUnitId: _portion.unitId,
+                  currentUnitDisplayName: _portion.unitDisplayName,
+                  colorScheme: colorScheme,
+                  onUnitChanged: (unit) {
+                    setState(() {
+                      _selectedUnit = unit;
+                      _portion.unitId = unit.unitId;
+                      _portion.unitDisplayName = unit.displayName;
+                    });
+                    _updateWeightEstimation();
+                  },
                 ),
               ),
               
@@ -356,8 +380,18 @@ class _PortionInputRowState extends ConsumerState<_PortionInputRow> {
   }
 
   Widget _buildUnitDropdown(List<MeasurementUnit> units, ColorScheme colorScheme) {
+    // Ensure selected unit is in the available units list
+    MeasurementUnit? validSelectedUnit;
+    if (_selectedUnit != null && units.any((u) => u.unitId == _selectedUnit!.unitId)) {
+      validSelectedUnit = units.firstWhere((u) => u.unitId == _selectedUnit!.unitId);
+    } else if (units.isNotEmpty) {
+      // Try to find current portion's unit in the list
+      final currentUnit = units.where((u) => u.unitId == _portion.unitId).firstOrNull;
+      validSelectedUnit = currentUnit ?? units.first;
+    }
+    
     return DropdownButtonFormField<MeasurementUnit>(
-      value: _selectedUnit ?? (units.isNotEmpty ? units.first : null),
+      value: validSelectedUnit,
       decoration: InputDecoration(
         labelText: 'Unit',
         filled: true,
@@ -420,6 +454,66 @@ class _PortionInputRowState extends ConsumerState<_PortionInputRow> {
         style: AppTextStyles.bodyMedium.copyWith(
           color: colorScheme.error,
         ),
+      ),
+    );
+  }
+
+  Widget _buildErrorDropdownWithFallback(ColorScheme colorScheme, Object error) {
+    // Try to get fallback units from guaranteed provider
+    final guaranteedUnits = ref.read(guaranteedUnitsProvider(_portion.foodName));
+    
+    if (guaranteedUnits.isNotEmpty) {
+      return _buildUnitDropdown(guaranteedUnits, colorScheme);
+    }
+    
+    // Try static provider as secondary fallback
+    try {
+      final staticUnits = ref.read(staticSuggestedUnitsProvider(_portion.foodName));
+      if (staticUnits.isNotEmpty) {
+        return _buildUnitDropdown(staticUnits, colorScheme);
+      }
+    } catch (e) {
+      // Continue to final fallback
+    }
+    
+    // Final fallback: basic units
+    final fallbackService = ref.read(fallbackMeasurementProvider);
+    final basicUnits = fallbackService.getSuggestedUnits(_portion.foodName);
+    
+    if (basicUnits.isNotEmpty) {
+      return _buildUnitDropdown(basicUnits, colorScheme);
+    }
+    
+    // If absolutely nothing works, show error with retry option
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer.withOpacity(0.3),
+        borderRadius: AppRadius.small,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Error loading units',
+            style: AppTextStyles.labelSmall.copyWith(
+              color: colorScheme.error,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          TextButton(
+            onPressed: () {
+              // Invalidate provider to retry
+              ref.invalidate(suggestedUnitsProvider(_portion.foodName));
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: colorScheme.primary,
+              minimumSize: const Size(0, 0),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+            ),
+            child: const Text('Retry', style: TextStyle(fontSize: 12)),
+          ),
+        ],
       ),
     );
   }

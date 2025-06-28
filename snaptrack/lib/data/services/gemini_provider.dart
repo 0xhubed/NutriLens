@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'ai_provider.dart';
 import 'secure_storage_fallback.dart';
 
-class GeminiProvider extends AIProvider {
+class GeminiProvider extends AIProvider implements TextAnalysisCapable {
   static const String _apiKeyKey = 'gemini_api_key';
   static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1';
   
@@ -251,5 +251,187 @@ Return ONLY a valid JSON object with no additional text, markdown formatting, or
     } catch (e) {
       throw Exception('Analysis failed: $e');
     }
+  }
+
+  @override
+  Future<TextAnalysisResult> analyzeTextDescription(String description) async {
+    final apiKey = await getApiKey();
+    
+    try {
+      if (apiKey == null || apiKey.isEmpty) {
+        // Return mock data if no API key is configured
+        print('Gemini: No API key configured, using mock data for text analysis');
+        return _getMockTextAnalysis(description);
+      }
+
+      // Make real API call to Gemini
+      final response = await _dio.post(
+        '/models/gemini-1.5-flash:generateContent?key=$apiKey',
+        data: {
+          'contents': [
+            {
+              'parts': [
+                {
+                  'text': '''You are a nutrition expert. Analyze the following food description and provide 2-3 food suggestions with estimated portions, units, and nutritional information.
+
+Food description: $description
+
+IMPORTANT: Respond with valid JSON only, no additional text or markdown formatting.
+
+For each food suggestion, provide:
+1. Name: Specific, clear food name
+2. Weight: Estimated weight in grams
+3. Portion data: Quantity and appropriate unit (e.g., 1 cup, 2 tbsp, 3 oz)
+4. Nutrition for the total portion
+
+Common units to use:
+- Liquids: cup, ml, dl, l, glass, bottle, mug
+- Powders: tsp, tbsp, cup, scoop
+- Solids: piece, slice, oz, g, portion, serving
+- Bulk: handful, cup, bowl
+
+Response format:
+{
+  "suggestions": [
+    {
+      "name": "Food name",
+      "weight": estimated_weight_in_grams,
+      "calories": calories_for_this_portion,
+      "protein": protein_for_this_portion,
+      "carbs": carbs_for_this_portion,
+      "fat": fat_for_this_portion,
+      "quantity": number,
+      "unitId": "unit_id",
+      "unitDisplayName": "unit display name",
+      "description": "Brief explanation including portion size"
+    }
+  ]
+}'''
+                }
+              ],
+            },
+          ],
+        },
+      );
+
+      final content = response.data['candidates'][0]['content']['parts'][0]['text'];
+      
+      // Extract JSON from response
+      final jsonStartIndex = content.indexOf('{');
+      if (jsonStartIndex == -1) {
+        throw Exception('No JSON found in response');
+      }
+      
+      // Find the matching closing brace
+      int braceCount = 0;
+      int jsonEndIndex = -1;
+      for (int i = jsonStartIndex; i < content.length; i++) {
+        if (content[i] == '{') braceCount++;
+        if (content[i] == '}') braceCount--;
+        if (braceCount == 0) {
+          jsonEndIndex = i + 1;
+          break;
+        }
+      }
+      
+      if (jsonEndIndex == -1) {
+        throw Exception('Incomplete JSON in response');
+      }
+      
+      final jsonString = content.substring(jsonStartIndex, jsonEndIndex);
+      final parsedResponse = jsonDecode(jsonString);
+      
+      final suggestions = (parsedResponse['suggestions'] as List)
+          .map((item) => FoodSuggestion.fromJson(item))
+          .toList();
+
+      return TextAnalysisResult(
+        suggestions: suggestions,
+        explanation: 'Analysis provided by Google Gemini',
+      );
+
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        throw Exception('Invalid API key');
+      } else if (e.response?.statusCode == 429) {
+        throw Exception('Rate limit exceeded');
+      } else {
+        throw Exception('Network error: ${e.message}');
+      }
+    } catch (e) {
+      throw Exception('Text analysis failed: $e');
+    }
+  }
+
+  TextAnalysisResult _getMockTextAnalysis(String description) {
+    // Keyword-based mock suggestions
+    final lowerDesc = description.toLowerCase();
+    final suggestions = <FoodSuggestion>[];
+
+    if (lowerDesc.contains('pasta')) {
+      suggestions.add(FoodSuggestion(
+        name: 'Spaghetti with Tomato Sauce',
+        calories: 330,
+        protein: 10.0,
+        carbs: 60.0,
+        fat: 5.0,
+        estimatedWeight: 300,
+        quantity: 1,
+        unitId: 'plate',
+        unitDisplayName: 'plate',
+        description: 'Estimated 1 plate of pasta',
+      ));
+    }
+    
+    if (lowerDesc.contains('sandwich')) {
+      suggestions.add(FoodSuggestion(
+        name: 'Club Sandwich',
+        calories: 380,
+        protein: 20.0,
+        carbs: 35.0,
+        fat: 18.0,
+        estimatedWeight: 200,
+        quantity: 1,
+        unitId: 'sandwich',
+        unitDisplayName: 'sandwich',
+        description: 'Estimated 1 whole sandwich',
+      ));
+    }
+
+    if (lowerDesc.contains('soup')) {
+      suggestions.add(FoodSuggestion(
+        name: 'Vegetable Soup',
+        calories: 120,
+        protein: 5.0,
+        carbs: 20.0,
+        fat: 3.0,
+        estimatedWeight: 300,
+        quantity: 1,
+        unitId: 'bowl',
+        unitDisplayName: 'bowl',
+        description: 'Estimated 1 bowl (300ml)',
+      ));
+    }
+
+    // Default suggestion if no keywords match
+    if (suggestions.isEmpty) {
+      suggestions.add(FoodSuggestion(
+        name: 'Mixed Food Item',
+        calories: 250,
+        protein: 15,
+        carbs: 30,
+        fat: 8,
+        estimatedWeight: 150,
+        quantity: 1,
+        unitId: 'portion',
+        unitDisplayName: 'portion',
+        description: 'Generic portion estimation',
+      ));
+    }
+
+    return TextAnalysisResult(
+      suggestions: suggestions,
+      explanation: 'Mock analysis for testing purposes',
+    );
   }
 }
