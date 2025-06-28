@@ -21,28 +21,28 @@ enum ActivityLevel {
 
 class SleepPattern {
   final Duration averageSleepDuration;
-  final DateTime typicalBedtime;
-  final DateTime typicalWakeTime;
+  final int typicalBedtimeHour; // Hour of day (0-23)
+  final int typicalWakeTimeHour; // Hour of day (0-23)
   final double sleepQuality; // 0.0 to 1.0
   
   const SleepPattern({
     required this.averageSleepDuration,
-    required this.typicalBedtime,
-    required this.typicalWakeTime,
+    required this.typicalBedtimeHour,
+    required this.typicalWakeTimeHour,
     required this.sleepQuality,
   });
   
   static const SleepPattern defaultPattern = SleepPattern(
     averageSleepDuration: Duration(hours: 8),
-    typicalBedtime: Duration(hours: 23), // 11 PM as Duration from midnight
-    typicalWakeTime: Duration(hours: 7), // 7 AM as Duration from midnight
+    typicalBedtimeHour: 23, // 11 PM
+    typicalWakeTimeHour: 7, // 7 AM
     sleepQuality: 0.7,
   );
   
   Map<String, dynamic> toJson() => {
     'averageSleepHours': averageSleepDuration.inHours,
-    'bedtimeHour': typicalBedtime.inHours,
-    'wakeTimeHour': typicalWakeTime.inHours,
+    'bedtimeHour': typicalBedtimeHour,
+    'wakeTimeHour': typicalWakeTimeHour,
     'sleepQuality': sleepQuality,
   };
 }

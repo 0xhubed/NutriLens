@@ -6,6 +6,10 @@ import 'package:intl/intl.dart';
 import '../../data/models/food_entry.dart';
 import '../../data/services/analytics_service.dart';
 import '../../data/services/export_service.dart';
+import '../../data/providers/metabolic_providers.dart';
+import '../../data/models/metabolic_context.dart';
+import '../widgets/metabolic_insights_card.dart';
+import '../widgets/metabolic_timeline_widget.dart';
 import 'widgets/weekly_stats_card.dart';
 import 'widgets/calories_trend_chart.dart';
 import 'widgets/macro_distribution_chart.dart';
@@ -27,7 +31,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -53,6 +57,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
             Tab(text: 'Overview', icon: Icon(Icons.dashboard)),
             Tab(text: 'Trends', icon: Icon(Icons.trending_up)),
             Tab(text: 'Insights', icon: Icon(Icons.lightbulb)),
+            Tab(text: 'Metabolic', icon: Icon(Icons.timeline)),
           ],
         ),
         actions: [
@@ -103,6 +108,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
           _buildOverviewTab(),
           _buildTrendsTab(),
           _buildInsightsTab(),
+          _buildMetabolicTab(),
         ],
       ),
     );
@@ -262,6 +268,265 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
             child: const Text('OK'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMetabolicTab() {
+    return RefreshIndicator(
+      onRefresh: () async {
+        // Invalidate metabolic providers to refresh data
+        ref.invalidate(metabolicInsightProvider('current_user'));
+        ref.invalidate(currentMetabolicStateProvider('current_user'));
+      },
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Section header
+            Text(
+              'Metabolic Analysis',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Track your metabolic state and timing patterns',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Current Metabolic State
+            Consumer(
+              builder: (context, ref, child) {
+                final stateAsync = ref.watch(currentMetabolicStateProvider('current_user'));
+                
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.timeline,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Current Metabolic State',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        stateAsync.when(
+                          data: (state) => MetabolicStatusWidget(
+                            state: state,
+                            timeSinceLastMeal: state.timeSinceLastMeal,
+                          ),
+                          loading: () => const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(32),
+                              child: CircularProgressIndicator(),
+                            ),
+                          ),
+                          error: (error, stack) => Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: Theme.of(context).colorScheme.error,
+                                    size: 48,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Unable to load metabolic state',
+                                    style: Theme.of(context).textTheme.bodyMedium,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Metabolic Insights
+            Consumer(
+              builder: (context, ref, child) {
+                final insightAsync = ref.watch(metabolicInsightProvider('current_user'));
+                
+                return insightAsync.when(
+                  data: (insight) => MetabolicInsightsCard(
+                    insight: insight,
+                    onTap: () {
+                      // Could navigate to detailed metabolic dashboard
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Detailed metabolic dashboard coming soon!'),
+                        ),
+                      );
+                    },
+                  ),
+                  loading: () => Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          const CircularProgressIndicator(),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Analyzing metabolic patterns...',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  error: (error, stack) => Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.warning_outlined,
+                            color: Theme.of(context).colorScheme.error,
+                            size: 48,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Metabolic insights temporarily unavailable',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Using fallback analysis',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Metabolic Timeline
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.schedule,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Today\'s Timeline',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final stateAsync = ref.watch(currentMetabolicStateProvider('current_user'));
+                        
+                        return SizedBox(
+                          height: 120,
+                          child: stateAsync.when(
+                            data: (state) => MetabolicTimelineWidget(
+                              currentState: state,
+                              recentMeals: [], // Would load from provider in real implementation
+                              timeRange: const Duration(hours: 12),
+                            ),
+                            loading: () => const Center(child: CircularProgressIndicator()),
+                            error: (error, stack) => Center(
+                              child: Text(
+                                'Timeline unavailable',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Timeline shows your metabolic phases throughout the day',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Getting Started Card (if no data)
+            Card(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.tips_and_updates,
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Getting Started',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Log your meals to see detailed metabolic analysis including:\n'
+                      '• Current metabolic phase (fed/fasting/fat-burning)\n'
+                      '• Optimal meal timing recommendations\n'
+                      '• Intermittent fasting pattern detection\n'
+                      '• Personalized metabolic insights',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
       ),
     );
   }

@@ -13,6 +13,10 @@ class UserMetrics {
   double? height; // in cm
   double? bodyFatPercentage;
   
+  // User demographics
+  int? age; // in years
+  String? gender; // 'male', 'female', 'other'
+  
   // Daily health metrics
   double? waterLiters;
   double? sleepHours;
@@ -111,6 +115,9 @@ class UserMetrics {
     if (bmi! < 30) return 'Overweight';
     return 'Obese';
   }
+  
+  // Helper to get current weight (alias for backward compatibility)
+  double? get currentWeight => weight;
   
   bool get isCompleteProfile {
     return weight != null && height != null;

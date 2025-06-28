@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/models/metabolic_state.dart';
 import '../../data/models/meal_timing_data.dart';
+import '../../data/models/food_entry.dart'; // For MealType enum
 import '../../core/theme/app_theme.dart';
 
 class MetabolicTimelineWidget extends StatelessWidget {

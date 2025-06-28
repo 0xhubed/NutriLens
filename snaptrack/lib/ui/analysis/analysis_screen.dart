@@ -22,6 +22,8 @@ import '../widgets/metabolic_insights_card.dart';
 import '../screens/measurement_guide_screen.dart';
 import '../../data/providers/metabolic_providers.dart';
 import '../../data/models/metabolic_context.dart';
+import '../../data/models/metabolic_insight.dart';
+import '../../data/models/metabolic_state.dart';
 
 class AnalysisScreen extends ConsumerStatefulWidget {
   final File imageFile;

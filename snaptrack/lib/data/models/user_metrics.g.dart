@@ -17,93 +17,108 @@ const UserMetricsSchema = CollectionSchema(
   name: r'UserMetrics',
   id: 3450439425069738250,
   properties: {
-    r'bmi': PropertySchema(
+    r'age': PropertySchema(
       id: 0,
+      name: r'age',
+      type: IsarType.long,
+    ),
+    r'bmi': PropertySchema(
+      id: 1,
       name: r'bmi',
       type: IsarType.double,
     ),
     r'bmiCategory': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'bmiCategory',
       type: IsarType.string,
     ),
     r'bmr': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'bmr',
       type: IsarType.double,
     ),
     r'bodyFatPercentage': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'bodyFatPercentage',
       type: IsarType.double,
     ),
     r'bodyMeasurementsData': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'bodyMeasurementsData',
       type: IsarType.string,
     ),
+    r'currentWeight': PropertySchema(
+      id: 6,
+      name: r'currentWeight',
+      type: IsarType.double,
+    ),
     r'dailyCalorieGoal': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'dailyCalorieGoal',
       type: IsarType.double,
     ),
     r'dailyStepGoal': PropertySchema(
-      id: 6,
+      id: 8,
       name: r'dailyStepGoal',
       type: IsarType.double,
     ),
     r'dailyWaterGoal': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'dailyWaterGoal',
       type: IsarType.double,
     ),
     r'date': PropertySchema(
-      id: 8,
+      id: 10,
       name: r'date',
       type: IsarType.dateTime,
     ),
+    r'gender': PropertySchema(
+      id: 11,
+      name: r'gender',
+      type: IsarType.string,
+    ),
     r'height': PropertySchema(
-      id: 9,
+      id: 12,
       name: r'height',
       type: IsarType.double,
     ),
     r'isCompleteProfile': PropertySchema(
-      id: 10,
+      id: 13,
       name: r'isCompleteProfile',
       type: IsarType.bool,
     ),
     r'notes': PropertySchema(
-      id: 11,
+      id: 14,
       name: r'notes',
       type: IsarType.string,
     ),
     r'sleepHours': PropertySchema(
-      id: 12,
+      id: 15,
       name: r'sleepHours',
       type: IsarType.double,
     ),
     r'stepCount': PropertySchema(
-      id: 13,
+      id: 16,
       name: r'stepCount',
       type: IsarType.long,
     ),
     r'stepGoalProgress': PropertySchema(
-      id: 14,
+      id: 17,
       name: r'stepGoalProgress',
       type: IsarType.double,
     ),
     r'waterGoalProgress': PropertySchema(
-      id: 15,
+      id: 18,
       name: r'waterGoalProgress',
       type: IsarType.double,
     ),
     r'waterLiters': PropertySchema(
-      id: 16,
+      id: 19,
       name: r'waterLiters',
       type: IsarType.double,
     ),
     r'weight': PropertySchema(
-      id: 17,
+      id: 20,
       name: r'weight',
       type: IsarType.double,
     )
@@ -136,6 +151,12 @@ int _userMetricsEstimateSize(
     }
   }
   {
+    final value = object.gender;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
     final value = object.notes;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -150,24 +171,27 @@ void _userMetricsSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeDouble(offsets[0], object.bmi);
-  writer.writeString(offsets[1], object.bmiCategory);
-  writer.writeDouble(offsets[2], object.bmr);
-  writer.writeDouble(offsets[3], object.bodyFatPercentage);
-  writer.writeString(offsets[4], object.bodyMeasurementsData);
-  writer.writeDouble(offsets[5], object.dailyCalorieGoal);
-  writer.writeDouble(offsets[6], object.dailyStepGoal);
-  writer.writeDouble(offsets[7], object.dailyWaterGoal);
-  writer.writeDateTime(offsets[8], object.date);
-  writer.writeDouble(offsets[9], object.height);
-  writer.writeBool(offsets[10], object.isCompleteProfile);
-  writer.writeString(offsets[11], object.notes);
-  writer.writeDouble(offsets[12], object.sleepHours);
-  writer.writeLong(offsets[13], object.stepCount);
-  writer.writeDouble(offsets[14], object.stepGoalProgress);
-  writer.writeDouble(offsets[15], object.waterGoalProgress);
-  writer.writeDouble(offsets[16], object.waterLiters);
-  writer.writeDouble(offsets[17], object.weight);
+  writer.writeLong(offsets[0], object.age);
+  writer.writeDouble(offsets[1], object.bmi);
+  writer.writeString(offsets[2], object.bmiCategory);
+  writer.writeDouble(offsets[3], object.bmr);
+  writer.writeDouble(offsets[4], object.bodyFatPercentage);
+  writer.writeString(offsets[5], object.bodyMeasurementsData);
+  writer.writeDouble(offsets[6], object.currentWeight);
+  writer.writeDouble(offsets[7], object.dailyCalorieGoal);
+  writer.writeDouble(offsets[8], object.dailyStepGoal);
+  writer.writeDouble(offsets[9], object.dailyWaterGoal);
+  writer.writeDateTime(offsets[10], object.date);
+  writer.writeString(offsets[11], object.gender);
+  writer.writeDouble(offsets[12], object.height);
+  writer.writeBool(offsets[13], object.isCompleteProfile);
+  writer.writeString(offsets[14], object.notes);
+  writer.writeDouble(offsets[15], object.sleepHours);
+  writer.writeLong(offsets[16], object.stepCount);
+  writer.writeDouble(offsets[17], object.stepGoalProgress);
+  writer.writeDouble(offsets[18], object.waterGoalProgress);
+  writer.writeDouble(offsets[19], object.waterLiters);
+  writer.writeDouble(offsets[20], object.weight);
 }
 
 UserMetrics _userMetricsDeserialize(
@@ -177,21 +201,23 @@ UserMetrics _userMetricsDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = UserMetrics();
-  object.bmi = reader.readDoubleOrNull(offsets[0]);
-  object.bmr = reader.readDoubleOrNull(offsets[2]);
-  object.bodyFatPercentage = reader.readDoubleOrNull(offsets[3]);
-  object.bodyMeasurementsData = reader.readStringOrNull(offsets[4]);
-  object.dailyCalorieGoal = reader.readDoubleOrNull(offsets[5]);
-  object.dailyStepGoal = reader.readDoubleOrNull(offsets[6]);
-  object.dailyWaterGoal = reader.readDoubleOrNull(offsets[7]);
-  object.date = reader.readDateTime(offsets[8]);
-  object.height = reader.readDoubleOrNull(offsets[9]);
+  object.age = reader.readLongOrNull(offsets[0]);
+  object.bmi = reader.readDoubleOrNull(offsets[1]);
+  object.bmr = reader.readDoubleOrNull(offsets[3]);
+  object.bodyFatPercentage = reader.readDoubleOrNull(offsets[4]);
+  object.bodyMeasurementsData = reader.readStringOrNull(offsets[5]);
+  object.dailyCalorieGoal = reader.readDoubleOrNull(offsets[7]);
+  object.dailyStepGoal = reader.readDoubleOrNull(offsets[8]);
+  object.dailyWaterGoal = reader.readDoubleOrNull(offsets[9]);
+  object.date = reader.readDateTime(offsets[10]);
+  object.gender = reader.readStringOrNull(offsets[11]);
+  object.height = reader.readDoubleOrNull(offsets[12]);
   object.id = id;
-  object.notes = reader.readStringOrNull(offsets[11]);
-  object.sleepHours = reader.readDoubleOrNull(offsets[12]);
-  object.stepCount = reader.readLongOrNull(offsets[13]);
-  object.waterLiters = reader.readDoubleOrNull(offsets[16]);
-  object.weight = reader.readDoubleOrNull(offsets[17]);
+  object.notes = reader.readStringOrNull(offsets[14]);
+  object.sleepHours = reader.readDoubleOrNull(offsets[15]);
+  object.stepCount = reader.readLongOrNull(offsets[16]);
+  object.waterLiters = reader.readDoubleOrNull(offsets[19]);
+  object.weight = reader.readDoubleOrNull(offsets[20]);
   return object;
 }
 
@@ -203,40 +229,46 @@ P _userMetricsDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 1:
-      return (reader.readString(offset)) as P;
-    case 2:
       return (reader.readDoubleOrNull(offset)) as P;
+    case 2:
+      return (reader.readString(offset)) as P;
     case 3:
       return (reader.readDoubleOrNull(offset)) as P;
     case 4:
-      return (reader.readStringOrNull(offset)) as P;
-    case 5:
       return (reader.readDoubleOrNull(offset)) as P;
+    case 5:
+      return (reader.readStringOrNull(offset)) as P;
     case 6:
       return (reader.readDoubleOrNull(offset)) as P;
     case 7:
       return (reader.readDoubleOrNull(offset)) as P;
     case 8:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 9:
       return (reader.readDoubleOrNull(offset)) as P;
     case 10:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDateTime(offset)) as P;
     case 11:
       return (reader.readStringOrNull(offset)) as P;
     case 12:
       return (reader.readDoubleOrNull(offset)) as P;
     case 13:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 14:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 15:
-      return (reader.readDouble(offset)) as P;
-    case 16:
       return (reader.readDoubleOrNull(offset)) as P;
+    case 16:
+      return (reader.readLongOrNull(offset)) as P;
     case 17:
+      return (reader.readDouble(offset)) as P;
+    case 18:
+      return (reader.readDouble(offset)) as P;
+    case 19:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 20:
       return (reader.readDoubleOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -336,6 +368,75 @@ extension UserMetricsQueryWhere
 
 extension UserMetricsQueryFilter
     on QueryBuilder<UserMetrics, UserMetrics, QFilterCondition> {
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> ageIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'age',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> ageIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'age',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> ageEqualTo(
+      int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'age',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> ageGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'age',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> ageLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'age',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> ageBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'age',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> bmiIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -867,6 +968,90 @@ extension UserMetricsQueryFilter
   }
 
   QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      currentWeightIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'currentWeight',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      currentWeightIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'currentWeight',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      currentWeightEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'currentWeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      currentWeightGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'currentWeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      currentWeightLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'currentWeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      currentWeightBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'currentWeight',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
       dailyCalorieGoalIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -1167,6 +1352,157 @@ extension UserMetricsQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> genderIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'gender',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      genderIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'gender',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> genderEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'gender',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      genderGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'gender',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> genderLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'gender',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> genderBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'gender',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      genderStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'gender',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> genderEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'gender',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> genderContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'gender',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> genderMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'gender',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      genderIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'gender',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      genderIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'gender',
+        value: '',
       ));
     });
   }
@@ -1926,6 +2262,18 @@ extension UserMetricsQueryLinks
 
 extension UserMetricsQuerySortBy
     on QueryBuilder<UserMetrics, UserMetrics, QSortBy> {
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByAge() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'age', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByAgeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'age', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByBmi() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'bmi', Sort.asc);
@@ -1990,6 +2338,19 @@ extension UserMetricsQuerySortBy
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByCurrentWeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentWeight', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      sortByCurrentWeightDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentWeight', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
       sortByDailyCalorieGoal() {
     return QueryBuilder.apply(this, (query) {
@@ -2039,6 +2400,18 @@ extension UserMetricsQuerySortBy
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'date', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByGender() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'gender', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByGenderDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'gender', Sort.desc);
     });
   }
 
@@ -2159,6 +2532,18 @@ extension UserMetricsQuerySortBy
 
 extension UserMetricsQuerySortThenBy
     on QueryBuilder<UserMetrics, UserMetrics, QSortThenBy> {
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByAge() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'age', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByAgeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'age', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByBmi() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'bmi', Sort.asc);
@@ -2223,6 +2608,19 @@ extension UserMetricsQuerySortThenBy
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByCurrentWeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentWeight', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      thenByCurrentWeightDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currentWeight', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
       thenByDailyCalorieGoal() {
     return QueryBuilder.apply(this, (query) {
@@ -2272,6 +2670,18 @@ extension UserMetricsQuerySortThenBy
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'date', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByGender() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'gender', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByGenderDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'gender', Sort.desc);
     });
   }
 
@@ -2404,6 +2814,12 @@ extension UserMetricsQuerySortThenBy
 
 extension UserMetricsQueryWhereDistinct
     on QueryBuilder<UserMetrics, UserMetrics, QDistinct> {
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByAge() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'age');
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByBmi() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'bmi');
@@ -2438,6 +2854,12 @@ extension UserMetricsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByCurrentWeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'currentWeight');
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QDistinct>
       distinctByDailyCalorieGoal() {
     return QueryBuilder.apply(this, (query) {
@@ -2460,6 +2882,13 @@ extension UserMetricsQueryWhereDistinct
   QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'date');
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByGender(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'gender', caseSensitive: caseSensitive);
     });
   }
 
@@ -2530,6 +2959,12 @@ extension UserMetricsQueryProperty
     });
   }
 
+  QueryBuilder<UserMetrics, int?, QQueryOperations> ageProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'age');
+    });
+  }
+
   QueryBuilder<UserMetrics, double?, QQueryOperations> bmiProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'bmi');
@@ -2562,6 +2997,12 @@ extension UserMetricsQueryProperty
     });
   }
 
+  QueryBuilder<UserMetrics, double?, QQueryOperations> currentWeightProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'currentWeight');
+    });
+  }
+
   QueryBuilder<UserMetrics, double?, QQueryOperations>
       dailyCalorieGoalProperty() {
     return QueryBuilder.apply(this, (query) {
@@ -2585,6 +3026,12 @@ extension UserMetricsQueryProperty
   QueryBuilder<UserMetrics, DateTime, QQueryOperations> dateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'date');
+    });
+  }
+
+  QueryBuilder<UserMetrics, String?, QQueryOperations> genderProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'gender');
     });
   }
 

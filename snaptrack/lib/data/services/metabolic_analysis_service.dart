@@ -36,7 +36,7 @@ class MetabolicAnalysisService {
   /// Get meal timing data for a specific date range
   Future<List<MealTimingData>> getMealTimings(String userId, DateTime start, DateTime end) async {
     final foodEntries = await _isar.foodEntrys
-        .where()
+        .filter()
         .timestampBetween(start, end)
         .findAll();
     
@@ -246,7 +246,7 @@ class MetabolicAnalysisService {
     final twentyFourHoursAgo = DateTime.now().subtract(const Duration(hours: 24));
     
     return await _isar.foodEntrys
-        .where()
+        .filter()
         .timestampGreaterThan(twentyFourHoursAgo)
         .sortByTimestampDesc()
         .findFirst();
@@ -254,7 +254,7 @@ class MetabolicAnalysisService {
   
   Future<FoodEntry?> _getLastMealBefore(String userId, DateTime before) async {
     return await _isar.foodEntrys
-        .where()
+        .filter()
         .timestampLessThan(before)
         .sortByTimestampDesc()
         .findFirst();
