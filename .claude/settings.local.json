@@ -30,7 +30,8 @@
       "Bash(timeout 10 flutter run --debug)",
       "Bash(dart analyze:*)",
       "Bash(dart:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(export PATH=\"$PATH:/opt/flutter/bin\")"
     ],
     "deny": []
   }

@@ -4,7 +4,7 @@
 # Simple script to quickly run the app
 
 # Set Flutter path
-export PATH="$PATH:/home/hubed/projects/nutriLens/flutter/bin"
+export PATH="$PATH:/opt/flutter/bin"
 
 # Check if build exists
 if [ ! -f "./build/linux/x64/release/bundle/snaptrack" ]; then

@@ -47,10 +47,10 @@ main() {
     # Set up Flutter path if not already in PATH
     if ! command_exists flutter; then
         print_status "Flutter not found in PATH. Setting up Flutter..."
-        export PATH="$PATH:/home/hubed/projects/nutriLens/flutter/bin"
+        export PATH="$PATH:/opt/flutter/bin"
         
         if ! command_exists flutter; then
-            print_error "Flutter not found. Please ensure Flutter is installed at /home/hubed/projects/nutriLens/flutter/"
+            print_error "Flutter not found. Please ensure Flutter is installed at /opt/flutter/"
             exit 1
         fi
     fi
@@ -121,10 +121,10 @@ case "${1:-}" in
             
             if ! command_exists flutter; then
                 print_status "Flutter not found in PATH. Setting up Flutter..."
-                export PATH="$PATH:/home/hubed/projects/nutriLens/flutter/bin"
+                export PATH="$PATH:/opt/flutter/bin"
                 
                 if ! command_exists flutter; then
-                    print_error "Flutter not found. Please ensure Flutter is installed at /home/hubed/projects/nutriLens/flutter/"
+                    print_error "Flutter not found. Please ensure Flutter is installed at /opt/flutter/"
                     exit 1
                 fi
             fi
@@ -192,7 +192,7 @@ case "${1:-}" in
         echo "  $0 --run-only         # Just run existing build"
         echo ""
         echo "Requirements:"
-        echo "  - Flutter SDK (will be set up automatically if at /home/hubed/projects/nutriLens/flutter/)"
+        echo "  - Flutter SDK (will be set up automatically if at /opt/flutter/)"
         echo "  - Linux desktop environment"
         echo "  - Run from the snaptrack directory"
         ;;
