@@ -18,7 +18,10 @@ import '../../data/services/ai_provider.dart';
 import '../common/date_time_picker_widget.dart';
 import '../widgets/multi_unit_input_widget.dart';
 import '../widgets/natural_language_input_widget.dart';
+import '../widgets/metabolic_insights_card.dart';
 import '../screens/measurement_guide_screen.dart';
+import '../../data/providers/metabolic_providers.dart';
+import '../../data/models/metabolic_context.dart';
 
 class AnalysisScreen extends ConsumerStatefulWidget {
   final File imageFile;
@@ -525,6 +528,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
               ],
             ),
           ),
+          const SizedBox(height: AppSpacing.lg),
+          _buildMetabolicInsights(),
           const SizedBox(height: AppSpacing.lg),
           _buildConfirmationButtons(result, colorScheme),
         ],
@@ -1575,5 +1580,143 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   void _reanalyzeWithPartialCorrection(FoodAnalysis originalResult, String correction) {
     final hint = '${originalResult.name}, but $correction';
     _reanalyzeWithHint(hint);
+  }
+  
+  Widget _buildMetabolicInsights() {
+    return Consumer(
+      builder: (context, ref, child) {
+        // Use a hardcoded user ID for now - in a real app this would come from auth
+        const userId = 'current_user';
+        
+        final quickInsightParams = QuickInsightParams(
+          timeSinceLastMeal: const Duration(hours: 4), // Default assumption
+          currentActivity: 'analyzing_food',
+        );
+        
+        final asyncInsight = ref.watch(quickMetabolicInsightProvider(quickInsightParams));
+        
+        return asyncInsight.when(
+          data: (insight) => MetabolicInsightsCard(
+            insight: insight,
+            onTap: () {
+              // Navigate to full metabolic dashboard
+              _showMetabolicAnalysisDialog(insight);
+            },
+          ),
+          loading: () => _buildMetabolicLoadingCard(),
+          error: (error, stack) => _buildMetabolicErrorCard(),
+        );
+      },
+    );
+  }
+  
+  Widget _buildMetabolicLoadingCard() {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: BorderSide(
+          color: colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Text(
+              'Analyzing metabolic timing...',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildMetabolicErrorCard() {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: BorderSide(
+          color: colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Row(
+          children: [
+            Icon(
+              Icons.timeline,
+              color: colorScheme.primary,
+              size: 20,
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Text(
+              'Metabolic insights temporarily unavailable',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  void _showMetabolicAnalysisDialog(MetabolicInsight insight) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Metabolic Analysis'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              MetabolicStatusWidget(
+                state: MetabolicState.calculate(
+                  timeSinceLastMeal: const Duration(hours: 4),
+                  lastMealCalories: 500,
+                  lastMealCarbs: 60,
+                  timestamp: DateTime.now(),
+                ),
+                timeSinceLastMeal: const Duration(hours: 4),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Detailed Analysis',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(insight.formatForDisplay()),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 }
