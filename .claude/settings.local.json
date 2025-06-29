@@ -31,7 +31,10 @@
       "Bash(dart analyze:*)",
       "Bash(dart:*)",
       "Bash(cat:*)",
-      "Bash(export PATH=\"$PATH:/opt/flutter/bin\")"
+      "Bash(export PATH=\"$PATH:/opt/flutter/bin\")",
+      "Bash(firebase:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm install:*)"
     ],
     "deny": []
   }

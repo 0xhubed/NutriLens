@@ -1,0 +1,7 @@
+{
+  "appDistribution": {
+    "app": "android",
+    "releaseNotesFile": "release-notes.txt",
+    "groups": ["testers"]
+  }
+}
