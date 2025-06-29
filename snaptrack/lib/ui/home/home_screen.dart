@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/models/daily_nutrition.dart';
 import '../../data/providers/activity_providers.dart';
 import '../../data/providers/nutrition_providers.dart';
+import '../../data/services/database_service.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -397,22 +398,45 @@ class HomeScreen extends ConsumerWidget {
                   color: colorScheme.onSurface,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
-                  borderRadius: AppRadius.extraLarge,
-                ),
-                child: Text(
-                  '${nutrition.mealCount} meals',
-                  style: AppTextStyles.labelMedium.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w500,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withOpacity(0.1),
+                      borderRadius: AppRadius.extraLarge,
+                    ),
+                    child: Text(
+                      '${nutrition.mealCount} meals',
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
-                ),
+                  if (nutrition.totalCalories == 0 && nutrition.mealCount > 0) ...[
+                    const SizedBox(width: AppSpacing.xs),
+                    Consumer(
+                      builder: (context, ref, child) => IconButton(
+                        icon: Icon(Icons.refresh, size: 20),
+                        onPressed: () async {
+                          await ref.read(databaseServiceProvider).recalculateDailyNutrition(DateTime.now());
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Recalculating nutrition totals...')),
+                          );
+                        },
+                        tooltip: 'Recalculate totals',
+                        padding: EdgeInsets.all(AppSpacing.xs),
+                        constraints: BoxConstraints(),
+                        iconSize: 20,
+                        color: colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),

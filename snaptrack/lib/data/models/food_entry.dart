@@ -168,11 +168,11 @@ class FoodEntry extends HiveObject {
     return portions.fold(0.0, (sum, portion) => sum + portion.fat);
   }
   
-  // Effective values (use portions if available, fallback to traditional)
-  double get effectiveCalories => usePortions ? portionCalories : calories;
-  double get effectiveProtein => usePortions ? portionProtein : protein;
-  double get effectiveCarbs => usePortions ? portionCarbs : carbs;
-  double get effectiveFat => usePortions ? portionFat : fat;
+  // Effective values (use portions if available AND non-zero, fallback to traditional)
+  double get effectiveCalories => (usePortions && portionCalories > 0) ? portionCalories : calories;
+  double get effectiveProtein => (usePortions && portionProtein > 0) ? portionProtein : protein;
+  double get effectiveCarbs => (usePortions && portionCarbs > 0) ? portionCarbs : carbs;
+  double get effectiveFat => (usePortions && portionFat > 0) ? portionFat : fat;
   double get effectiveWeight => usePortions ? totalPortionWeight : actualWeight;
   
   // Computed property for total macros

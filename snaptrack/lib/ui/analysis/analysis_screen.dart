@@ -47,6 +47,12 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   final _carbsController = TextEditingController();
   final _fatController = TextEditingController();
   
+  // Store AI result values
+  double _aiCalories = 0.0;
+  double _aiProtein = 0.0;
+  double _aiCarbs = 0.0;
+  double _aiFat = 0.0;
+  
   bool _showAlternatives = false;
   bool _userConfirmedCorrect = false;
   bool _usePortionMode = false;
@@ -629,12 +635,15 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
           width: double.infinity,
           child: FilledButton.icon(
             onPressed: () {
+              print('🎯 Looks Good button pressed');
+              print('🎯 About to call _updateFormFields with result: ${result.name}');
               setState(() {
                 _userConfirmedCorrect = true;
                 _showAlternatives = false;
               });
               _updateFormFields(result);
               _slideController.forward();
+              print('🎯 After _updateFormFields call');
             },
             icon: const Icon(Icons.check_circle_rounded),
             label: const Text('Looks Good'),
@@ -1225,8 +1234,41 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   }
   
   void _updateFormFields(FoodAnalysis result) {
+    print('📝 Updating form fields from AI result...');
+    print('📝 AI Result values:');
+    print('   - Name: ${result.name}');
+    print('   - Calories: ${result.calories}');
+    print('   - Protein: ${result.protein}');
+    print('   - Carbs: ${result.carbs}');
+    print('   - Fat: ${result.fat}');
+    print('   - Has portion data: ${result.hasPortionData}');
+    
     // Always set the name first, regardless of portion mode
     _nameController.text = result.name;
+    
+    // Store AI values
+    _aiCalories = result.calories;
+    _aiProtein = result.protein;
+    _aiCarbs = result.carbs;
+    _aiFat = result.fat;
+    
+    print('📝 Stored AI values:');
+    print('   - AI Calories: $_aiCalories');
+    print('   - AI Protein: $_aiProtein');
+    print('   - AI Carbs: $_aiCarbs');
+    print('   - AI Fat: $_aiFat');
+    
+    // Always populate the nutrition fields with AI values first
+    _caloriesController.text = result.calories.toStringAsFixed(0);
+    _proteinController.text = result.protein.toStringAsFixed(1);
+    _carbsController.text = result.carbs.toStringAsFixed(1);
+    _fatController.text = result.fat.toStringAsFixed(1);
+    
+    print('📝 Controllers after update:');
+    print('   - Calories: "${_caloriesController.text}"');
+    print('   - Protein: "${_proteinController.text}"');
+    print('   - Carbs: "${_carbsController.text}"');
+    print('   - Fat: "${_fatController.text}"');
     
     // Check if AI provided portion data
     if (result.hasPortionData && result.detectedPortions != null && result.detectedPortions!.isNotEmpty) {
@@ -1261,11 +1303,6 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
     } else {
       // Fallback to traditional weight-based input
       print('📏 No portion data from AI, using traditional weight input');
-      
-      _caloriesController.text = result.calories.toStringAsFixed(0);
-      _proteinController.text = result.protein.toStringAsFixed(1);
-      _carbsController.text = result.carbs.toStringAsFixed(1);
-      _fatController.text = result.fat.toStringAsFixed(1);
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1308,18 +1345,48 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   void _saveFoodEntry() async {
     try {
       print('🍽️ Starting to save food entry...');
+      print('🍽️ Controller values:');
+      print('   - Name: "${_nameController.text}"');
+      print('   - Calories: "${_caloriesController.text}"');
+      print('   - Protein: "${_proteinController.text}"');
+      print('   - Carbs: "${_carbsController.text}"');
+      print('   - Fat: "${_fatController.text}"');
+      
+      // Use controller values if available, otherwise use AI values
+      final calories = _caloriesController.text.isNotEmpty 
+          ? (double.tryParse(_caloriesController.text) ?? _aiCalories)
+          : _aiCalories;
+      final protein = _proteinController.text.isNotEmpty 
+          ? (double.tryParse(_proteinController.text) ?? _aiProtein)
+          : _aiProtein;
+      final carbs = _carbsController.text.isNotEmpty 
+          ? (double.tryParse(_carbsController.text) ?? _aiCarbs)
+          : _aiCarbs;
+      final fat = _fatController.text.isNotEmpty 
+          ? (double.tryParse(_fatController.text) ?? _aiFat)
+          : _aiFat;
+      
       final entry = FoodEntry()
         ..name = _nameController.text.isNotEmpty ? _nameController.text : 'Unknown Food'
-        ..calories = double.tryParse(_caloriesController.text) ?? 0
-        ..protein = double.tryParse(_proteinController.text) ?? 0
-        ..carbs = double.tryParse(_carbsController.text) ?? 0
-        ..fat = double.tryParse(_fatController.text) ?? 0
+        ..calories = calories
+        ..protein = protein
+        ..carbs = carbs
+        ..fat = fat
         ..timestamp = _selectedDateTime
         ..imageBase64 = ''
         ..usePortions = _usePortionMode
         ..portions = _usePortionMode ? _portions : [];
       
-      print('🍽️ Entry details: ${entry.name}, ${entry.calories} cal, ID will be: ${entry.id}');
+      print('🍽️ Entry details:');
+      print('   - Name: ${entry.name}');
+      print('   - Calories: ${entry.calories}');
+      print('   - Protein: ${entry.protein}');
+      print('   - Carbs: ${entry.carbs}');
+      print('   - Fat: ${entry.fat}');
+      print('   - Use portions: ${entry.usePortions}');
+      print('   - Portions count: ${entry.portions.length}');
+      print('   - Effective calories: ${entry.effectiveCalories}');
+      print('   - ID will be: ${entry.id}');
       
       await ref.read(databaseServiceProvider).saveFoodEntry(entry);
       print('🍽️ Successfully saved entry with ID: ${entry.id}');
@@ -1612,7 +1679,10 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
             },
           ),
           loading: () => _buildMetabolicLoadingCard(),
-          error: (error, stack) => _buildMetabolicErrorCard(),
+          error: (error, stack) {
+            print('❌ Metabolic insight error: $error');
+            return _buildMetabolicErrorCard();
+          },
         );
       },
     );

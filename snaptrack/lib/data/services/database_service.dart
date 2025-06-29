@@ -186,12 +186,8 @@ class DatabaseService {
     print('📊 DatabaseService: All daily box keys: ${_dailyBox.keys.toList()}');
     
     // Use periodic polling as workaround for Hive watch issues
-    return Stream.periodic(Duration(milliseconds: 500)).map((_) {
+    return Stream.periodic(Duration(milliseconds: 2000)).map((_) {
       final nutrition = _dailyBox.get(key);
-      print('📊 DatabaseService: Daily nutrition check for $key: ${nutrition?.totalCalories ?? 0} cal');
-      if (nutrition == null) {
-        print('📊 DatabaseService: No nutrition found for key $key, available keys: ${_dailyBox.keys.toList()}');
-      }
       return nutrition;
     }).distinct((prev, next) => 
       (prev?.totalCalories ?? 0) == (next?.totalCalories ?? 0) &&
@@ -213,7 +209,18 @@ class DatabaseService {
     final entries = await getFoodEntriesForDate(date);
     print('🧮 DatabaseService: Found ${entries.length} entries for date');
     for (final entry in entries) {
-      print('🧮 DatabaseService: Entry "${entry.name}": ${entry.effectiveCalories} cal');
+      print('🧮 DatabaseService: Entry "${entry.name}":');
+      print('   - usePortions: ${entry.usePortions}');
+      print('   - portions count: ${entry.portions.length}');
+      print('   - base calories: ${entry.calories}');
+      print('   - portionCalories: ${entry.portionCalories}');
+      print('   - effectiveCalories: ${entry.effectiveCalories}');
+      if (entry.usePortions && entry.portions.isNotEmpty) {
+        for (int i = 0; i < entry.portions.length; i++) {
+          final portion = entry.portions[i];
+          print('   - Portion $i: ${portion.quantity} ${portion.unitDisplayName} = ${portion.calories} cal');
+        }
+      }
     }
     
     final dateOnly = DateTime(date.year, date.month, date.day);
@@ -255,8 +262,17 @@ class DatabaseService {
           print('🔄 DatabaseService: Migrating $oldKey → $newKey');
           final nutrition = _dailyBox.get(oldKey);
           if (nutrition != null) {
-            nutrition.id = newKey;
-            await _dailyBox.put(newKey, nutrition);
+            // Create a new DailyNutrition object to avoid Hive key conflict
+            final newNutrition = DailyNutrition(
+              date: nutrition.date,
+              totalCalories: nutrition.totalCalories,
+              totalProtein: nutrition.totalProtein,
+              totalCarbs: nutrition.totalCarbs,
+              totalFat: nutrition.totalFat,
+              mealCount: nutrition.mealCount,
+            );
+            newNutrition.id = newKey;
+            await _dailyBox.put(newKey, newNutrition);
             await _dailyBox.delete(oldKey);
           }
         }
