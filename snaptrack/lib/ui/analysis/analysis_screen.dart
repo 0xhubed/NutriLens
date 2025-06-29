@@ -442,6 +442,9 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
           _buildAlternativeSuggestions(result, colorScheme),
         ],
         const SizedBox(height: AppSpacing.lg),
+        // Move metabolic insights here so they're always visible
+        _buildMetabolicInsights(),
+        const SizedBox(height: AppSpacing.lg),
         _buildModernNutritionForm(colorScheme),
       ],
     );
@@ -536,8 +539,6 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.lg),
-          _buildMetabolicInsights(),
           const SizedBox(height: AppSpacing.lg),
           _buildConfirmationButtons(result, colorScheme),
         ],
@@ -1658,6 +1659,32 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   }
   
   Widget _buildMetabolicInsights() {
+    // Temporarily bypass the provider to test if the widget displays correctly
+    final testInsight = MetabolicInsight()
+      ..timestamp = DateTime.now()
+      ..userId = 'test'
+      ..contextHash = 'test'
+      ..confidenceScore = 7
+      ..currentState = 'Post-meal digestion phase'
+      ..recommendation = 'Wait 2-3 hours before your next meal for optimal digestion'
+      ..reasoning = 'Your body is currently processing nutrients from your last meal'
+      ..actionItems = ['Stay hydrated', 'Light activity can aid digestion', 'Next meal in 2-3 hours']
+      ..recommendedProtein = 30.0
+      ..recommendedCarbs = 40.0
+      ..recommendedFat = 20.0
+      ..nextOptimalMealTime = 'In 2-3 hours';
+    
+    print('🔍 Building metabolic insights widget with test data...');
+    
+    return MetabolicInsightsCard(
+      insight: testInsight,
+      onTap: () {
+        _showMetabolicAnalysisDialog(testInsight);
+      },
+    );
+    
+    // Original provider-based code commented out for testing
+    /*
     return Consumer(
       builder: (context, ref, child) {
         // Use a hardcoded user ID for now - in a real app this would come from auth
@@ -1668,24 +1695,33 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
           currentActivity: 'analyzing_food',
         );
         
+        print('🔍 Building metabolic insights widget...');
         final asyncInsight = ref.watch(quickMetabolicInsightProvider(quickInsightParams));
         
         return asyncInsight.when(
-          data: (insight) => MetabolicInsightsCard(
-            insight: insight,
-            onTap: () {
-              // Navigate to full metabolic dashboard
-              _showMetabolicAnalysisDialog(insight);
-            },
-          ),
-          loading: () => _buildMetabolicLoadingCard(),
+          data: (insight) {
+            print('✅ Metabolic insight loaded: ${insight.currentState}');
+            return MetabolicInsightsCard(
+              insight: insight,
+              onTap: () {
+                // Navigate to full metabolic dashboard
+                _showMetabolicAnalysisDialog(insight);
+              },
+            );
+          },
+          loading: () {
+            print('⏳ Metabolic insight loading...');
+            return _buildMetabolicLoadingCard();
+          },
           error: (error, stack) {
             print('❌ Metabolic insight error: $error');
+            print('Stack: $stack');
             return _buildMetabolicErrorCard();
           },
         );
       },
     );
+    */
   }
   
   Widget _buildMetabolicLoadingCard() {

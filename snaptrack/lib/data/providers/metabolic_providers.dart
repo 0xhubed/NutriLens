@@ -58,8 +58,17 @@ final metabolicInsightProvider = FutureProvider.family<MetabolicInsight, String>
 
 // Quick insight for immediate feedback
 final quickMetabolicInsightProvider = FutureProvider.family<MetabolicInsight, QuickInsightParams>((ref, params) async {
+  print('🔄 quickMetabolicInsightProvider called with params: ${params.timeSinceLastMeal}, ${params.currentActivity}');
   final coachingService = ref.watch(metabolicCoachingServiceProvider);
-  return await coachingService.getQuickInsight(params.timeSinceLastMeal, params.currentActivity);
+  
+  try {
+    final result = await coachingService.getQuickInsight(params.timeSinceLastMeal, params.currentActivity);
+    print('✅ quickMetabolicInsightProvider returning insight: ${result.currentState}');
+    return result;
+  } catch (e) {
+    print('❌ quickMetabolicInsightProvider error: $e');
+    rethrow;
+  }
 });
 
 // Eating patterns
@@ -175,6 +184,17 @@ class QuickInsightParams {
     required this.timeSinceLastMeal,
     required this.currentActivity,
   });
+  
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is QuickInsightParams &&
+          runtimeType == other.runtimeType &&
+          timeSinceLastMeal == other.timeSinceLastMeal &&
+          currentActivity == other.currentActivity;
+
+  @override
+  int get hashCode => timeSinceLastMeal.hashCode ^ currentActivity.hashCode;
 }
 
 class EatingPatternParams {
