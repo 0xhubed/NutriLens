@@ -1,74 +1,86 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 
 import '../models/activity_entry.dart';
 import '../models/user_metrics.dart';
 import 'activity_database.dart';
-import 'database_service.dart';
 
 final activityServiceProvider = Provider<ActivityService>((ref) {
-  final databaseService = ref.watch(databaseServiceProvider);
-  return ActivityService(databaseService.database);
+  return ActivityService();
 });
 
 class ActivityService {
-  final Isar isar;
+  Box<ActivityEntry> get _activityBox => Hive.box<ActivityEntry>('activityEntries');
   
-  ActivityService(this.isar);
+  ActivityService();
 
   // Activity Entry CRUD operations
   Future<void> logActivity(ActivityEntry entry) async {
-    await isar.writeTxn(() async {
-      await isar.activityEntrys.put(entry);
-    });
+    // Generate ID if not present
+    entry.id ??= DateTime.now().millisecondsSinceEpoch.toString();
+    await _activityBox.put(entry.id, entry);
   }
 
   Future<void> updateActivity(ActivityEntry entry) async {
-    await isar.writeTxn(() async {
-      await isar.activityEntrys.put(entry);
-    });
+    if (entry.id == null) return;
+    await _activityBox.put(entry.id, entry);
   }
 
   Future<void> deleteActivity(int id) async {
-    await isar.writeTxn(() async {
-      await isar.activityEntrys.delete(id);
-    });
+    await _activityBox.delete(id);
   }
 
   Future<List<ActivityEntry>> getActivitiesForDate(DateTime date) async {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
     
-    return await isar.activityEntrys
-        .filter()
-        .timestampBetween(startOfDay, endOfDay, includeUpper: false)
-        .findAll();
+    return _activityBox.values
+        .where((entry) =>
+            entry.timestamp.isAfter(startOfDay) &&
+            entry.timestamp.isBefore(endOfDay))
+        .toList();
   }
 
   Future<List<ActivityEntry>> getActivitiesInRange(DateTime startDate, DateTime endDate) async {
-    return await isar.activityEntrys
-        .filter()
-        .timestampBetween(startDate, endDate, includeUpper: false)
-        .sortByTimestamp()
-        .findAll();
+    return _activityBox.values
+        .where((entry) =>
+            entry.timestamp.isAfter(startDate) &&
+            entry.timestamp.isBefore(endDate))
+        .toList()
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
   }
 
   Stream<List<ActivityEntry>> watchActivitiesForDate(DateTime date) {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
     
-    return isar.activityEntrys
-        .filter()
-        .timestampBetween(startOfDay, endOfDay, includeUpper: false)
-        .sortByTimestamp()
-        .watch(fireImmediately: true);
+    print('🏃 ActivityService: Setting up watchActivitiesForDate stream...');
+    
+    // Use periodic polling as workaround for Hive watch issues
+    return Stream.periodic(Duration(milliseconds: 500)).map((_) {
+      final activities = _activityBox.values
+          .where((entry) =>
+              entry.timestamp.isAfter(startOfDay) &&
+              entry.timestamp.isBefore(endOfDay))
+          .toList()
+        ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      print('🏃 ActivityService: Activities for date check: ${activities.length} activities');
+      return activities;
+    }).distinct((prev, next) => prev.length == next.length && 
+      (prev.isEmpty || next.isEmpty || prev.first.id == next.first.id));
   }
 
   Stream<List<ActivityEntry>> watchAllActivities() {
-    return isar.activityEntrys
-        .where()
-        .sortByTimestampDesc()
-        .watch(fireImmediately: true);
+    print('🏃 ActivityService: Setting up watchAllActivities stream...');
+    
+    // Use periodic polling as workaround for Hive watch issues
+    return Stream.periodic(Duration(milliseconds: 500)).map((_) {
+      final activities = _activityBox.values.toList()
+        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      print('🏃 ActivityService: All activities check: ${activities.length} activities');
+      return activities;
+    }).distinct((prev, next) => prev.length == next.length && 
+      (prev.isEmpty || next.isEmpty || prev.first.id == next.first.id));
   }
 
   // Calorie calculation methods
@@ -120,16 +132,15 @@ class ActivityService {
 
   // Get recent activities for quick logging
   Future<List<ActivityEntry>> getRecentActivities({int limit = 10}) async {
-    return await isar.activityEntrys
-        .where()
-        .sortByTimestampDesc()
-        .limit(limit)
-        .findAll();
+    final activities = _activityBox.values.toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    
+    return activities.take(limit).toList();
   }
 
   // Get favorite activities (most logged)
   Future<List<String>> getFavoriteActivities({int limit = 5}) async {
-    final activities = await isar.activityEntrys.where().findAll();
+    final activities = _activityBox.values.toList();
     
     // Count frequency of each activity
     final activityCounts = <String, int>{};

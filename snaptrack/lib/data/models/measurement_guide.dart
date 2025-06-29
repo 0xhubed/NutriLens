@@ -1,43 +1,78 @@
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 import 'measurement_unit.dart';
 
 part 'measurement_guide.g.dart';
 
-@collection
-class MeasurementGuide {
-  Id id = Isar.autoIncrement;
+@HiveType(typeId: 10)
+class MeasurementGuide extends HiveObject {
+  @HiveField(0)
+  String? id;
   
-  late String unitId;
-  late String unitDisplayName;
-  late String title;
-  late String description;
-  late String visualComparison;
-  late String helpText;
+  @HiveField(1)
+  String unitId = '';
   
-  @enumerated
+  @HiveField(2)
+  String unitDisplayName = '';
+  
+  @HiveField(3)
+  String title = '';
+  
+  @HiveField(4)
+  String description = '';
+  
+  @HiveField(5)
+  String visualComparison = '';
+  
+  @HiveField(6)
+  String helpText = '';
+  
+  @HiveField(7)
   MeasurementCategory category = MeasurementCategory.liquid;
   
   // Visual references
+  @HiveField(8)
   List<String> visualComparisons = []; // e.g., "Size of a tennis ball"
+  
+  @HiveField(9)
   List<String> handComparisons = [];   // e.g., "Fits in your palm"
+  
+  @HiveField(10)
   List<String> commonObjects = [];     // e.g., "About the size of a deck of cards"
   
   // Usage context
+  @HiveField(11)
   List<String> bestFor = [];           // e.g., "Fruits", "Vegetables", "Proteins"
+  
+  @HiveField(12)
   List<String> examples = [];          // e.g., "1 medium apple", "1 cup cooked rice"
   
   // Measurement tips
+  @HiveField(13)
   String? howToMeasure;
+  
+  @HiveField(14)
   String? commonMistakes;
+  
+  @HiveField(15)
   String? accuracyTips;
   
   // Reference values
+  @HiveField(16)
   double? approximateGrams;
+  
+  @HiveField(17)
   double? approximateCalories;
   
+  @HiveField(18)
   bool isUserFavorite = false;
+  
+  @HiveField(19)
   DateTime createdAt = DateTime.now();
+  
+  @HiveField(20)
   DateTime? lastViewed;
+  
+  @HiveField(21)
   int viewCount = 0;
   
   MeasurementGuide();
@@ -109,12 +144,21 @@ class MeasurementGuide {
   }
 }
 
-@embedded
-class VisualReference {
-  late String type; // 'hand', 'object', 'food'
-  late String description;
+@HiveType(typeId: 29)
+class VisualReference extends HiveObject {
+  @HiveField(0)
+  String type = ''; // 'hand', 'object', 'food'
+  
+  @HiveField(1)
+  String description = '';
+  
+  @HiveField(2)
   String? imagePath;
+  
+  @HiveField(3)
   String? iconName;
+  
+  @HiveField(4)
   double? size; // for objects with known dimensions
   
   VisualReference();

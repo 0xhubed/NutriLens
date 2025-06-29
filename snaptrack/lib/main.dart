@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import 'core/config/app_config.dart';
 import 'core/theme/app_theme.dart';
@@ -15,6 +14,8 @@ import 'data/models/measurement_unit.dart';
 import 'data/models/metabolic_insight.dart';
 import 'data/models/metabolic_state.dart';
 import 'data/models/user_metrics.dart';
+import 'data/models/measurement_guide.dart';
+import 'data/models/metabolic_context.dart';
 import 'data/providers/activity_providers.dart';
 import 'data/providers/metabolic_providers.dart';
 import 'data/providers/metrics_providers.dart';
@@ -27,32 +28,67 @@ import 'ui/app.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize database
-  final dir = await getApplicationDocumentsDirectory();
-  final isar = await Isar.open(
-    [
-      FoodEntrySchema, 
-      DailyNutritionSchema, 
-      MealTemplateSchema,
-      ActivityEntrySchema,
-      UserMetricsSchema,
-      MeasurementUnitSchema,
-      FoodConversionSchema,
-      UserMeasurementPreferenceSchema,
-      // Metabolic Analysis Models
-      MetabolicStateSchema,
-      MetabolicInsightSchema,
-      EatingPatternSchema,
-      MealTimingDataSchema,
-    ],
-    directory: dir.path,
-  );
+  // Initialize Hive
+  await Hive.initFlutter();
+  
+  // Register adapters
+  Hive.registerAdapter(FoodEntryAdapter());
+  Hive.registerAdapter(DailyNutritionAdapter());
+  Hive.registerAdapter(MealTemplateAdapter());
+  Hive.registerAdapter(ActivityEntryAdapter());
+  Hive.registerAdapter(UserMetricsAdapter());
+  Hive.registerAdapter(MeasurementUnitAdapter());
+  Hive.registerAdapter(FoodConversionAdapter());
+  Hive.registerAdapter(UserMeasurementPreferenceAdapter());
+  Hive.registerAdapter(MetabolicStateAdapter());
+  Hive.registerAdapter(MetabolicInsightAdapter());
+  Hive.registerAdapter(EatingPatternAdapter());
+  Hive.registerAdapter(MealTimingDataAdapter());
+  Hive.registerAdapter(MeasurementGuideAdapter());
+  
+  // Register enum adapters
+  Hive.registerAdapter(MealTypeAdapter());
+  Hive.registerAdapter(FoodGroupAdapter());
+  Hive.registerAdapter(CuisineTypeAdapter());
+  Hive.registerAdapter(DietaryTagAdapter());
+  Hive.registerAdapter(MeasurementCategoryAdapter());
+  Hive.registerAdapter(GoalTypeAdapter());
+  Hive.registerAdapter(ActivityCategoryAdapter());
+  Hive.registerAdapter(IntensityAdapter());
+  Hive.registerAdapter(MetabolicPhaseAdapter());
+  Hive.registerAdapter(InsulinLevelAdapter());
+  Hive.registerAdapter(UserGoalsAdapter());
+  Hive.registerAdapter(ActivityLevelAdapter());
+  
+  // Register embedded class adapters
+  Hive.registerAdapter(DetectedFoodItemAdapter());
+  Hive.registerAdapter(FoodPortionAdapter());
+  Hive.registerAdapter(TemplateItemAdapter());
+  Hive.registerAdapter(TemplateIngredientAdapter());
+  Hive.registerAdapter(HealthGoalAdapter());
+  Hive.registerAdapter(ActivityAdapter());
+  Hive.registerAdapter(VisualReferenceAdapter());
+  
+  // Open boxes
+  await Hive.openBox<FoodEntry>('foodEntries');
+  await Hive.openBox<DailyNutrition>('dailyNutrition');
+  await Hive.openBox<MealTemplate>('mealTemplates');
+  await Hive.openBox<ActivityEntry>('activityEntries');
+  await Hive.openBox<UserMetrics>('userMetrics');
+  await Hive.openBox<MeasurementUnit>('measurementUnits');
+  await Hive.openBox<FoodConversion>('foodConversions');
+  await Hive.openBox<UserMeasurementPreference>('userMeasurementPreferences');
+  await Hive.openBox<MetabolicState>('metabolicStates');
+  await Hive.openBox<MetabolicInsight>('metabolicInsights');
+  await Hive.openBox<EatingPattern>('eatingPatterns');
+  await Hive.openBox<MealTimingData>('mealTimingData');
+  await Hive.openBox<MeasurementGuide>('measurementGuides');
   
   // Initialize services
-  final dbService = DatabaseService(isar);
-  final activityService = ActivityService(isar);
-  final metricsService = MetricsService(isar);
-  final metabolicAnalysisService = MetabolicAnalysisService(isar);
+  final dbService = DatabaseService();
+  final activityService = ActivityService();
+  final metricsService = MetricsService();
+  final metabolicAnalysisService = MetabolicAnalysisService();
   
   runApp(
     ProviderScope(
@@ -61,7 +97,6 @@ void main() async {
         activityServiceProvider.overrideWithValue(activityService),
         metricsServiceProvider.overrideWithValue(metricsService),
         metabolicAnalysisServiceProvider.overrideWithValue(metabolicAnalysisService),
-        isarProvider.overrideWithValue(isar),
       ],
       child: const NutriLensApp(),
     ),

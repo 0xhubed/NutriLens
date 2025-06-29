@@ -8,7 +8,7 @@ import 'nutrition_providers.dart';
 
 // Activity Service Provider
 final activityServiceProvider = Provider<ActivityService>((ref) {
-  throw UnimplementedError('Must be overridden in main.dart');
+  return ActivityService();
 });
 
 // Today's activities

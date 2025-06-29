@@ -18,7 +18,7 @@ class HistoryScreen extends ConsumerStatefulWidget {
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   bool _isSelectionMode = false;
-  final Set<int> _selectedEntries = {};
+  final Set<String> _selectedEntries = {};
   bool _isGridView = false;
 
   void _invalidateAnalyticsProviders(DateTime affectedDate) {
@@ -159,11 +159,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final entries = await ref.read(foodEntriesProvider.future);
     setState(() {
       _selectedEntries.clear();
-      _selectedEntries.addAll(entries.map((e) => e.id));
+      _selectedEntries.addAll(entries.map((e) => e.id).where((id) => id != null).cast<String>());
     });
   }
 
-  void _toggleSelection(int entryId) {
+  void _toggleSelection(String? entryId) {
+    if (entryId == null) return;
     setState(() {
       if (_selectedEntries.contains(entryId)) {
         _selectedEntries.remove(entryId);
@@ -261,7 +262,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
     if (confirmed == true) {
       final dbService = ref.read(databaseServiceProvider);
-      await dbService.deleteFoodEntry(entry.id);
+      if (entry.id != null) {
+        await dbService.deleteFoodEntry(entry.id!);
+      }
       _invalidateAnalyticsProviders(entry.timestamp);
       
       if (mounted) {
@@ -412,7 +415,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       try {
         // Get the database service and create template service
         final dbService = ref.read(databaseServiceProvider);
-        final templateService = TemplateService(dbService.isar);
+        final templateService = TemplateService();
         
         // Create template from food entry
         await templateService.createTemplate(
@@ -783,7 +786,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               },
               onDismissed: (direction) async {
                 final dbService = ref.read(databaseServiceProvider);
-                await dbService.deleteFoodEntry(entry.id);
+                if (entry.id != null) {
+        await dbService.deleteFoodEntry(entry.id!);
+      }
                 _invalidateAnalyticsProviders(entry.timestamp);
                 
                 if (mounted) {

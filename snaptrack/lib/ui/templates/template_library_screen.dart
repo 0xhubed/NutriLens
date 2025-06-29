@@ -32,8 +32,7 @@ class _TemplateLibraryScreenState extends ConsumerState<TemplateLibraryScreen>
   }
 
   TemplateService get _templateService {
-    final nutritionRepo = ref.read(nutritionRepositoryProvider);
-    return TemplateService(nutritionRepo.databaseService.isar);
+    return TemplateService();
   }
 
   @override
@@ -684,7 +683,9 @@ class _TemplateLibraryScreenState extends ConsumerState<TemplateLibraryScreen>
     );
 
     if (confirmed == true) {
-      await _templateService.deleteTemplate(template.id);
+      if (template.id != null) {
+        await _templateService.deleteTemplate(template.id!);
+      }
       _loadTemplates();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,111 +1,98 @@
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 import '../models/meal_template.dart';
 import '../models/food_entry.dart';
 import '../models/measurement_unit.dart';
 
 class MealTemplateService {
-  final Isar isar;
+  Box<MealTemplate> get _templateBox => Hive.box<MealTemplate>('mealTemplates');
 
-  MealTemplateService(this.isar);
+  MealTemplateService();
 
   /// Save a meal template
   Future<void> saveTemplate(MealTemplate template) async {
-    await isar.writeTxn(() async {
-      await isar.mealTemplates.put(template);
-    });
+    // Generate ID if not present
+    template.id ??= DateTime.now().millisecondsSinceEpoch;
+    await _templateBox.put(template.id, template);
   }
 
   /// Get all templates
   Future<List<MealTemplate>> getAllTemplates() async {
-    return await isar.mealTemplates.where().findAll();
+    return _templateBox.values.toList();
   }
 
   /// Get templates by category
   Future<List<MealTemplate>> getTemplatesByCategory(MealType category) async {
-    return await isar.mealTemplates
-        .filter()
-        .mealTypeEqualTo(category)
-        .findAll();
+    return _templateBox.values
+        .where((template) => template.mealType == category)
+        .toList();
   }
 
   /// Get recent templates
   Future<List<MealTemplate>> getRecentTemplates({int limit = 10}) async {
-    return await isar.mealTemplates
-        .where()
-        .sortByLastUsedDesc()
-        .limit(limit)
-        .findAll();
+    final templates = _templateBox.values
+        .where((template) => template.lastUsed != null)
+        .toList()
+      ..sort((a, b) => b.lastUsed!.compareTo(a.lastUsed!));
+    
+    return templates.take(limit).toList();
   }
 
   /// Get popular templates
   Future<List<MealTemplate>> getPopularTemplates({int limit = 10}) async {
-    return await isar.mealTemplates
-        .where()
-        .sortByUsageCountDesc()
-        .limit(limit)
-        .findAll();
+    final templates = _templateBox.values.toList()
+      ..sort((a, b) => b.usageCount.compareTo(a.usageCount));
+    
+    return templates.take(limit).toList();
   }
 
   /// Get favorite templates
   Future<List<MealTemplate>> getFavoriteTemplates() async {
-    return await isar.mealTemplates
-        .filter()
-        .isFavoriteEqualTo(true)
-        .findAll();
+    return _templateBox.values
+        .where((template) => template.isFavorite)
+        .toList();
   }
 
   /// Search templates
   Future<List<MealTemplate>> searchTemplates(String query) async {
     final lowerQuery = query.toLowerCase();
     
-    return await isar.mealTemplates
-        .filter()
-        .nameContains(query, caseSensitive: false)
-        .or()
-        .descriptionContains(query, caseSensitive: false)
-        .or()
-        .tagsElementContains(lowerQuery)
-        .findAll();
+    return _templateBox.values
+        .where((template) =>
+            template.name.toLowerCase().contains(lowerQuery) ||
+            (template.description?.toLowerCase().contains(lowerQuery) ?? false) ||
+            template.tags.any((tag) => tag.toLowerCase().contains(lowerQuery)))
+        .toList();
   }
 
   /// Get templates with specific dietary tags
   Future<List<MealTemplate>> getTemplatesByDietaryTags(List<DietaryTag> tags) async {
-    var query = isar.mealTemplates.filter();
-    
-    for (final tag in tags) {
-      query = query.dietaryTagsElementEqualTo(tag);
-    }
-    
-    return await query.findAll();
+    return _templateBox.values
+        .where((template) => 
+            tags.every((tag) => template.dietaryTags.contains(tag)))
+        .toList();
   }
 
   /// Toggle favorite status
   Future<void> toggleFavorite(int templateId) async {
-    await isar.writeTxn(() async {
-      final template = await isar.mealTemplates.get(templateId);
-      if (template != null) {
-        template.isFavorite = !template.isFavorite;
-        await isar.mealTemplates.put(template);
-      }
-    });
+    final template = _templateBox.get(templateId);
+    if (template != null) {
+      template.isFavorite = !template.isFavorite;
+      await _templateBox.put(templateId, template);
+    }
   }
 
   /// Mark template as used
   Future<void> markAsUsed(int templateId) async {
-    await isar.writeTxn(() async {
-      final template = await isar.mealTemplates.get(templateId);
-      if (template != null) {
-        template.incrementUsage();
-        await isar.mealTemplates.put(template);
-      }
-    });
+    final template = _templateBox.get(templateId);
+    if (template != null) {
+      template.incrementUsage();
+      await _templateBox.put(templateId, template);
+    }
   }
 
   /// Delete template
   Future<void> deleteTemplate(int templateId) async {
-    await isar.writeTxn(() async {
-      await isar.mealTemplates.delete(templateId);
-    });
+    await _templateBox.delete(templateId);
   }
 
   /// Create template from food entry
@@ -208,14 +195,15 @@ class MealTemplateService {
 
   /// Get predefined templates
   Future<void> seedPredefinedTemplates() async {
-    final existingCount = await isar.mealTemplates.count();
-    if (existingCount > 0) return; // Already seeded
+    if (_templateBox.isNotEmpty) return; // Already seeded
     
     final templates = _getPredefinedTemplates();
     
-    await isar.writeTxn(() async {
-      await isar.mealTemplates.putAll(templates);
-    });
+    for (int i = 0; i < templates.length; i++) {
+      final template = templates[i];
+      template.id ??= i + 1000; // Start with higher IDs for predefined
+      await _templateBox.put(template.id, template);
+    }
   }
 
   List<MealTemplate> _getPredefinedTemplates() {

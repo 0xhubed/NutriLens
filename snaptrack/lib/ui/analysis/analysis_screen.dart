@@ -1225,6 +1225,9 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   }
   
   void _updateFormFields(FoodAnalysis result) {
+    // Always set the name first, regardless of portion mode
+    _nameController.text = result.name;
+    
     // Check if AI provided portion data
     if (result.hasPortionData && result.detectedPortions != null && result.detectedPortions!.isNotEmpty) {
       print('🍽️ AI provided ${result.detectedPortions!.length} portion(s), enabling portion mode');
@@ -1259,7 +1262,6 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
       // Fallback to traditional weight-based input
       print('📏 No portion data from AI, using traditional weight input');
       
-      _nameController.text = result.name;
       _caloriesController.text = result.calories.toStringAsFixed(0);
       _proteinController.text = result.protein.toStringAsFixed(1);
       _carbsController.text = result.carbs.toStringAsFixed(1);
@@ -1305,6 +1307,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   
   void _saveFoodEntry() async {
     try {
+      print('🍽️ Starting to save food entry...');
       final entry = FoodEntry()
         ..name = _nameController.text.isNotEmpty ? _nameController.text : 'Unknown Food'
         ..calories = double.tryParse(_caloriesController.text) ?? 0
@@ -1316,7 +1319,10 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
         ..usePortions = _usePortionMode
         ..portions = _usePortionMode ? _portions : [];
       
+      print('🍽️ Entry details: ${entry.name}, ${entry.calories} cal, ID will be: ${entry.id}');
+      
       await ref.read(databaseServiceProvider).saveFoodEntry(entry);
+      print('🍽️ Successfully saved entry with ID: ${entry.id}');
       
       // Invalidate analytics providers to refresh all statistics
       _invalidateAnalyticsProviders(_selectedDateTime);

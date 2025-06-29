@@ -1,17 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 
 import '../models/measurement_unit.dart';
-import 'database_service.dart';
 import 'measurement_database.dart';
 
 // Note: conversionServiceProvider is defined in measurement_providers.dart
 // This is kept here for reference but should not be used
 
 class ConversionService {
-  final Isar isar;
+  Box<FoodConversion> get _conversionBox => Hive.box<FoodConversion>('foodConversions');
+  Box<UserMeasurementPreference> get _preferenceBox => Hive.box<UserMeasurementPreference>('userMeasurementPreferences');
   
-  ConversionService(this.isar);
+  ConversionService();
 
   /// Convert a quantity from one unit to grams
   Future<ConversionResult> convertToGrams({
@@ -138,15 +138,15 @@ class ConversionService {
 
   /// Get frequently used units across all foods
   Future<List<MeasurementUnit>> getFrequentlyUsedUnits() async {
-    final preferences = await isar.userMeasurementPreferences
-        .filter()
-        .usageCountGreaterThan(0)
-        .sortByUsageCountDesc()
-        .limit(10)
-        .findAll();
+    final preferences = _preferenceBox.values
+        .where((pref) => pref.usageCount > 0)
+        .toList()
+      ..sort((a, b) => b.usageCount.compareTo(a.usageCount));
+    
+    final limitedPrefs = preferences.take(10).toList();
 
     final units = <MeasurementUnit>[];
-    for (final pref in preferences) {
+    for (final pref in limitedPrefs) {
       final unit = MeasurementDatabase.getUnitById(pref.preferredUnitId);
       if (unit != null) {
         units.add(unit);
@@ -242,9 +242,9 @@ class ConversionService {
       isUserGenerated: true,
     );
 
-    await isar.writeTxn(() async {
-      await isar.foodConversions.put(conversion);
-    });
+    // Generate ID if not present
+    conversion.id ??= DateTime.now().millisecondsSinceEpoch.toString();
+    await _conversionBox.put(conversion.id, conversion);
   }
 
   /// Record unit usage for suggestions
@@ -255,21 +255,18 @@ class ConversionService {
     final category = categorizeFoodName(foodName);
     
     // Check if preference exists
-    final existing = await isar.userMeasurementPreferences
-        .filter()
-        .foodCategoryEqualTo(category)
-        .and()
-        .preferredUnitIdEqualTo(unitId)
-        .findFirst();
+    final existing = _preferenceBox.values
+        .where((pref) => 
+            pref.foodCategory == category &&
+            pref.preferredUnitId == unitId)
+        .firstOrNull;
 
     if (existing != null) {
       // Update existing
       existing.usageCount++;
       existing.lastUsed = DateTime.now();
       
-      await isar.writeTxn(() async {
-        await isar.userMeasurementPreferences.put(existing);
-      });
+      await _preferenceBox.put(existing.id, existing);
     } else {
       // Create new preference
       final preference = UserMeasurementPreference.create(
@@ -277,9 +274,9 @@ class ConversionService {
         preferredUnitId: unitId,
       );
       
-      await isar.writeTxn(() async {
-        await isar.userMeasurementPreferences.put(preference);
-      });
+      // Generate ID if not present
+      preference.id ??= DateTime.now().millisecondsSinceEpoch.toString();
+      await _preferenceBox.put(preference.id, preference);
     }
   }
 
@@ -332,29 +329,29 @@ class ConversionService {
   /// Private helper methods
   
   Future<FoodConversion?> _getUserConversion(String foodName, String unitId) async {
-    return await isar.foodConversions
-        .filter()
-        .foodNameEqualTo(foodName.toLowerCase())
-        .and()
-        .unitIdEqualTo(unitId)
-        .and()
-        .isUserGeneratedEqualTo(true)
-        .sortByUsageCountDesc()
-        .findFirst();
+    final conversions = _conversionBox.values
+        .where((conv) => 
+            conv.foodName == foodName.toLowerCase() &&
+            conv.unitId == unitId &&
+            conv.isUserGenerated)
+        .toList()
+      ..sort((a, b) => b.usageCount.compareTo(a.usageCount));
+    
+    return conversions.isNotEmpty ? conversions.first : null;
   }
 
   Future<List<MeasurementUnit>> getRecentUnitsForFood(String foodName) async {
     final category = categorizeFoodName(foodName);
     
-    final preferences = await isar.userMeasurementPreferences
-        .filter()
-        .foodCategoryEqualTo(category)
-        .sortByUsageCountDesc()
-        .limit(5)
-        .findAll();
+    final preferences = _preferenceBox.values
+        .where((pref) => pref.foodCategory == category)
+        .toList()
+      ..sort((a, b) => b.usageCount.compareTo(a.usageCount));
+    
+    final limitedPrefs = preferences.take(5).toList();
 
     final units = <MeasurementUnit>[];
-    for (final pref in preferences) {
+    for (final pref in limitedPrefs) {
       final unit = MeasurementDatabase.getUnitById(pref.preferredUnitId);
       if (unit != null) {
         units.add(unit);

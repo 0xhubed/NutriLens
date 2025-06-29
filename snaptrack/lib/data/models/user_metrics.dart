@@ -1,35 +1,49 @@
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 
 part 'user_metrics.g.dart';
 
-@collection
-class UserMetrics {
-  Id id = Isar.autoIncrement;
+@HiveType(typeId: 4)
+class UserMetrics extends HiveObject {
+  @HiveField(0)
+  String? id;
   
-  late DateTime date;
+  @HiveField(1)
+  DateTime date = DateTime.now();
   
   // Physical measurements
+  @HiveField(2)
   double? weight; // in kg
+  
+  @HiveField(3)
   double? height; // in cm
+  
+  @HiveField(4)
   double? bodyFatPercentage;
   
   // User demographics
+  @HiveField(5)
   int? age; // in years
+  
+  @HiveField(6)
   String? gender; // 'male', 'female', 'other'
   
   // Daily health metrics
+  @HiveField(7)
   double? waterLiters;
+  
+  @HiveField(8)
   double? sleepHours;
+  
+  @HiveField(9)
   int? stepCount;
   
   // Body measurements stored as string in database
+  @HiveField(10)
   String? bodyMeasurementsData;
   
   // Body measurements (optional) - computed from stored string
-  @ignore
   Map<String, double>? _bodyMeasurements;
   
-  @ignore
   Map<String, double>? get bodyMeasurements {
     if (_bodyMeasurements == null && bodyMeasurementsData != null) {
       _bodyMeasurements = {};
@@ -47,7 +61,6 @@ class UserMetrics {
     return _bodyMeasurements;
   }
   
-  @ignore
   set bodyMeasurements(Map<String, double>? measurements) {
     _bodyMeasurements = measurements;
     if (measurements == null) {
@@ -60,14 +73,23 @@ class UserMetrics {
   }
   
   // Calculated metrics
+  @HiveField(11)
   double? bmi;
+  
+  @HiveField(12)
   double? bmr; // Basal Metabolic Rate
   
   // User goals and preferences
+  @HiveField(13)
   double? dailyCalorieGoal;
+  
+  @HiveField(14)
   double? dailyWaterGoal;
+  
+  @HiveField(15)
   double? dailyStepGoal;
   
+  @HiveField(16)
   String? notes;
   
   UserMetrics();
@@ -134,17 +156,27 @@ class UserMetrics {
   }
 }
 
-@embedded
-class HealthGoal {
-  late String name;
-  late double targetValue;
-  late String unit;
-  late DateTime targetDate;
-  late String description;
+@HiveType(typeId: 25)
+class HealthGoal extends HiveObject {
+  @HiveField(0)
+  String name = '';
   
-  @enumerated
+  @HiveField(1)
+  double targetValue = 0.0;
+  
+  @HiveField(2)
+  String unit = '';
+  
+  @HiveField(3)
+  DateTime targetDate = DateTime.now();
+  
+  @HiveField(4)
+  String description = '';
+  
+  @HiveField(5)
   GoalType type = GoalType.weightLoss;
   
+  @HiveField(6)
   bool isActive = true;
   
   HealthGoal();
@@ -160,11 +192,17 @@ class HealthGoal {
   });
 }
 
+@HiveType(typeId: 35)
 enum GoalType {
+  @HiveField(0)
   weightLoss,
+  @HiveField(1)
   weightGain,
+  @HiveField(2)
   maintenance,
+  @HiveField(3)
   performance,
+  @HiveField(4)
   custom,
 }
 

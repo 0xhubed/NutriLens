@@ -33,8 +33,7 @@ class _TemplateSelectionScreenState extends ConsumerState<TemplateSelectionScree
   }
 
   TemplateService get _templateService {
-    final nutritionRepo = ref.read(nutritionRepositoryProvider);
-    return TemplateService(nutritionRepo.databaseService.isar);
+    return TemplateService();
   }
 
   Future<void> _loadTemplates() async {

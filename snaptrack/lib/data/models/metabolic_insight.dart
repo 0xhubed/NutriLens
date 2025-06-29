@@ -1,39 +1,63 @@
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 import 'macro_profile.dart';
 
 part 'metabolic_insight.g.dart';
 
-@collection
-class MetabolicInsight {
-  Id id = Isar.autoIncrement;
+@HiveType(typeId: 7)
+class MetabolicInsight extends HiveObject {
+  @HiveField(0)
+  String? id;
   
-  late DateTime timestamp;
-  late String userId;
+  @HiveField(1)
+  DateTime timestamp = DateTime.now();
+  
+  @HiveField(2)
+  String userId = '';
   
   // Core insight data
-  late String currentState; // "Fat burning mode", "Post-meal recovery"
-  late String recommendation; // "Wait 2 more hours before eating"
-  late String reasoning; // "Your insulin levels are dropping..."
-  late int confidenceScore; // 1-10
+  @HiveField(3)
+  String currentState = ''; // "Fat burning mode", "Post-meal recovery"
+  
+  @HiveField(4)
+  String recommendation = ''; // "Wait 2 more hours before eating"
+  
+  @HiveField(5)
+  String reasoning = ''; // "Your insulin levels are dropping..."
+  
+  @HiveField(6)
+  int confidenceScore = 5; // 1-10
   
   // Action items
+  @HiveField(7)
   List<String> actionItems = [];
   
   // Timing recommendations
+  @HiveField(8)
   String? nextOptimalMealTime;
   
   // Macro recommendations
-  late double recommendedProtein;
-  late double recommendedCarbs;
-  late double recommendedFat;
+  @HiveField(9)
+  double recommendedProtein = 0.0;
+  
+  @HiveField(10)
+  double recommendedCarbs = 0.0;
+  
+  @HiveField(11)
+  double recommendedFat = 0.0;
   
   // Additional insights
+  @HiveField(12)
   String? fastingRecommendation;
+  
+  @HiveField(13)
   String? workoutTiming;
+  
+  @HiveField(14)
   String? sleepOptimization;
   
   // Context hash to avoid duplicate analysis
-  late String contextHash;
+  @HiveField(15)
+  String contextHash = '';
   
   // Constructor
   MetabolicInsight();
@@ -93,7 +117,6 @@ class MetabolicInsight {
   }
   
   // Get recommended macro profile
-  @ignore
   MacroGrams get recommendedMacros {
     return MacroGrams(
       protein: recommendedProtein,
@@ -103,17 +126,12 @@ class MetabolicInsight {
   }
   
   // Quality checks
-  @ignore
   bool get isHighConfidence => confidenceScore >= 7;
-  @ignore
   bool get hasActionItems => actionItems.isNotEmpty;
-  @ignore
   bool get hasTimingRecommendation => nextOptimalMealTime != null;
-  @ignore
   bool get hasMacroRecommendation => recommendedProtein > 0 || recommendedCarbs > 0 || recommendedFat > 0;
   
   // Get confidence description
-  @ignore
   String get confidenceDescription {
     if (confidenceScore >= 8) return 'Very High';
     if (confidenceScore >= 6) return 'High';
@@ -122,7 +140,6 @@ class MetabolicInsight {
   }
   
   // Get priority level
-  @ignore
   String get priorityLevel {
     if (confidenceScore >= 8 && actionItems.length >= 3) return 'Critical';
     if (confidenceScore >= 6 && actionItems.length >= 2) return 'High';
@@ -131,17 +148,14 @@ class MetabolicInsight {
   }
   
   // Summary for notifications
-  @ignore
   String get shortSummary {
     if (recommendation.length <= 50) return recommendation;
     return '${recommendation.substring(0, 47)}...';
   }
   
   // Age of insight
-  @ignore
   Duration get age => DateTime.now().difference(timestamp);
   
-  @ignore
   bool get isStale => age.inHours > 6; // Insights older than 6 hours considered stale
   
   // Format for user display

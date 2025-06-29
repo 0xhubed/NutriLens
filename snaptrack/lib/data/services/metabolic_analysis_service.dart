@@ -1,13 +1,13 @@
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 import '../models/food_entry.dart';
 import '../models/meal_timing_data.dart';
 import '../models/metabolic_state.dart';
 import '../models/eating_pattern.dart';
 
 class MetabolicAnalysisService {
-  final Isar _isar;
+  Box<FoodEntry> get _foodBox => Hive.box<FoodEntry>('foodEntries');
   
-  MetabolicAnalysisService(this._isar);
+  MetabolicAnalysisService();
   
   /// Calculate the current metabolic state for a user
   Future<MetabolicState> calculateCurrentState(String userId) async {
@@ -35,10 +35,11 @@ class MetabolicAnalysisService {
   
   /// Get meal timing data for a specific date range
   Future<List<MealTimingData>> getMealTimings(String userId, DateTime start, DateTime end) async {
-    final foodEntries = await _isar.foodEntrys
-        .filter()
-        .timestampBetween(start, end)
-        .findAll();
+    final foodEntries = _foodBox.values
+        .where((entry) =>
+            entry.timestamp.isAfter(start) &&
+            entry.timestamp.isBefore(end))
+        .toList();
     
     if (foodEntries.isEmpty) return [];
     
@@ -245,19 +246,21 @@ class MetabolicAnalysisService {
   Future<FoodEntry?> _getLastMeal(String userId) async {
     final twentyFourHoursAgo = DateTime.now().subtract(const Duration(hours: 24));
     
-    return await _isar.foodEntrys
-        .filter()
-        .timestampGreaterThan(twentyFourHoursAgo)
-        .sortByTimestampDesc()
-        .findFirst();
+    final entries = _foodBox.values
+        .where((entry) => entry.timestamp.isAfter(twentyFourHoursAgo))
+        .toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    
+    return entries.isNotEmpty ? entries.first : null;
   }
   
   Future<FoodEntry?> _getLastMealBefore(String userId, DateTime before) async {
-    return await _isar.foodEntrys
-        .filter()
-        .timestampLessThan(before)
-        .sortByTimestampDesc()
-        .findFirst();
+    final entries = _foodBox.values
+        .where((entry) => entry.timestamp.isBefore(before))
+        .toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    
+    return entries.isNotEmpty ? entries.first : null;
   }
   
   DateTime _getStartOfDay(DateTime date) {

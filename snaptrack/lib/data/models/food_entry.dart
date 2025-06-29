@@ -1,88 +1,144 @@
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 import 'measurement_unit.dart';
 
 part 'food_entry.g.dart';
 
+@HiveType(typeId: 30)
 enum MealType {
+  @HiveField(0)
   breakfast,
+  @HiveField(1)
   lunch,
+  @HiveField(2)
   dinner,
+  @HiveField(3)
   snack,
 }
 
+@HiveType(typeId: 31)
 enum FoodGroup {
+  @HiveField(0)
   proteins,
+  @HiveField(1)
   grains,
+  @HiveField(2)
   vegetables,
+  @HiveField(3)
   fruits,
+  @HiveField(4)
   dairy,
+  @HiveField(5)
   fats,
+  @HiveField(6)
   other,
 }
 
+@HiveType(typeId: 32)
 enum CuisineType {
+  @HiveField(0)
   italian,
+  @HiveField(1)
   asian,
+  @HiveField(2)
   american,
+  @HiveField(3)
   mexican,
+  @HiveField(4)
   indian,
+  @HiveField(5)
   mediterranean,
+  @HiveField(6)
   other,
 }
 
+@HiveType(typeId: 33)
 enum DietaryTag {
+  @HiveField(0)
   vegetarian,
+  @HiveField(1)
   vegan,
+  @HiveField(2)
   glutenFree,
+  @HiveField(3)
   ketoFriendly,
+  @HiveField(4)
   lowCarb,
+  @HiveField(5)
   highProtein,
+  @HiveField(6)
   none,
 }
 
-@collection
-class FoodEntry {
-  Id id = Isar.autoIncrement;
+@HiveType(typeId: 0)
+class FoodEntry extends HiveObject {
+  @HiveField(0)
+  String? id;
   
-  late String name;
-  late String imageBase64;
-  late double calories;
-  late double protein;
-  late double carbs;
-  late double fat;
-  late DateTime timestamp;
+  @HiveField(1)
+  String name = '';
+  
+  @HiveField(2)
+  String imageBase64 = '';
+  
+  @HiveField(3)
+  double calories = 0.0;
+  
+  @HiveField(4)
+  double protein = 0.0;
+  
+  @HiveField(5)
+  double carbs = 0.0;
+  
+  @HiveField(6)
+  double fat = 0.0;
+  
+  @HiveField(7)
+  DateTime timestamp = DateTime.now();
   
   // Weight information
+  @HiveField(8)
   double? estimatedWeight; // in grams
+  
+  @HiveField(9)
   double? userWeight; // user-provided weight in grams
+  
   double get actualWeight => userWeight ?? estimatedWeight ?? 100.0; // fallback to 100g
   
   // Optional fields
+  @HiveField(10)
   String? notes;
   
   // New categorization fields
-  @enumerated
+  @HiveField(11)
   MealType mealType = MealType.snack;
   
-  @enumerated
+  @HiveField(12)
   List<FoodGroup> foodGroups = [];
   
-  @enumerated
+  @HiveField(13)
   CuisineType cuisine = CuisineType.other;
   
-  @enumerated
+  @HiveField(14)
   List<DietaryTag> dietaryTags = [];
   
+  @HiveField(15)
   String? portionSize;
+  
+  @HiveField(16)
   String? cookingMethod;
   
   // Enhanced detection fields
+  @HiveField(17)
   List<DetectedFoodItem> detectedItems = [];
   
+  @HiveField(18)
   String? aiProvider; // Which provider was used for analysis
   
   // v1.4: Measurement Units and Portions Support
+  @HiveField(19)
   bool usePortions = false; // Flag to indicate if using portion-based input
+  
+  @HiveField(20)
   List<FoodPortion> portions = []; // List of food portions with units
   
   // Backward compatibility - computed from portions when usePortions = true
@@ -198,14 +254,27 @@ class FoodItem {
   }
 }
 
-@embedded
-class DetectedFoodItem {
-  late String name;
-  late double calories;
-  late double protein;
-  late double carbs;
-  late double fat;
+@HiveType(typeId: 21)
+class DetectedFoodItem extends HiveObject {
+  @HiveField(0)
+  String name = '';
+  
+  @HiveField(1)
+  double calories = 0.0;
+  
+  @HiveField(2)
+  double protein = 0.0;
+  
+  @HiveField(3)
+  double carbs = 0.0;
+  
+  @HiveField(4)
+  double fat = 0.0;
+  
+  @HiveField(5)
   String? portion;
+  
+  @HiveField(6)
   double? weight; // in grams
   
   DetectedFoodItem();

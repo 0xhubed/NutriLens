@@ -1,52 +1,86 @@
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 import 'food_entry.dart';
 import 'measurement_unit.dart';
 
 part 'meal_template.g.dart';
 
-@collection
-class MealTemplate {
-  Id id = Isar.autoIncrement;
+@HiveType(typeId: 2)
+class MealTemplate extends HiveObject {
+  @HiveField(0)
+  String? id;
   
-  late String name;
-  late String description;
-  late double calories;
-  late double protein;
-  late double carbs;
-  late double fat;
-  late DateTime createdAt;
+  @HiveField(1)
+  String name = '';
+  
+  @HiveField(2)
+  String description = '';
+  
+  @HiveField(3)
+  double calories = 0.0;
+  
+  @HiveField(4)
+  double protein = 0.0;
+  
+  @HiveField(5)
+  double carbs = 0.0;
+  
+  @HiveField(6)
+  double fat = 0.0;
+  
+  @HiveField(7)
+  DateTime createdAt = DateTime.now();
   
   // Categorization
-  @enumerated
+  @HiveField(8)
   MealType mealType = MealType.snack;
   
-  @enumerated
+  @HiveField(9)
   List<FoodGroup> foodGroups = [];
   
-  @enumerated
+  @HiveField(10)
   CuisineType cuisine = CuisineType.other;
   
-  @enumerated
+  @HiveField(11)
   List<DietaryTag> dietaryTags = [];
   
   // Template metadata
+  @HiveField(12)
   int usageCount = 0;
+  
+  @HiveField(13)
   DateTime? lastUsed;
+  
+  @HiveField(14)
   bool isFavorite = false;
+  
+  @HiveField(15)
   List<String> tags = [];
   
   // Food items in this template (traditional)
+  @HiveField(16)
   List<TemplateItem> items = [];
   
   // v1.4: Portion-based template ingredients
+  @HiveField(17)
   bool usePortions = false;
+  
+  @HiveField(18)
   List<TemplateIngredient> ingredients = [];
+  
+  @HiveField(19)
   int servings = 1;
+  
+  @HiveField(20)
   String? instructions;
+  
+  @HiveField(21)
   int? prepTimeMinutes;
+  
+  @HiveField(22)
   int? cookTimeMinutes;
   
   // Optional image for template
+  @HiveField(23)
   String? imageBase64;
   
   // Computed properties
@@ -213,15 +247,30 @@ class MealTemplate {
   double get fatPerServing => usePortions ? fat : fat / servings;
 }
 
-@embedded
-class TemplateItem {
-  late String name;
-  late double calories;
-  late double protein;
-  late double carbs;
-  late double fat;
+@HiveType(typeId: 26)
+class TemplateItem extends HiveObject {
+  @HiveField(0)
+  String name = '';
+  
+  @HiveField(1)
+  double calories = 0.0;
+  
+  @HiveField(2)
+  double protein = 0.0;
+  
+  @HiveField(3)
+  double carbs = 0.0;
+  
+  @HiveField(4)
+  double fat = 0.0;
+  
+  @HiveField(5)
   String? portion;
+  
+  @HiveField(6)
   double multiplier = 1.0; // For portion adjustments
+  
+  @HiveField(7)
   bool isAdjustable = true; // Can user adjust this item's quantity?
   
   TemplateItem();
@@ -244,17 +293,31 @@ class TemplateItem {
   double get adjustedFat => fat * multiplier;
 }
 
-@embedded
-class TemplateIngredient {
-  late String name;
-  late double quantity;
-  late String unitId;
-  late String unitDisplayName;
-  late double estimatedGrams;
+@HiveType(typeId: 27)
+class TemplateIngredient extends HiveObject {
+  @HiveField(0)
+  String name = '';
+  
+  @HiveField(1)
+  double quantity = 0.0;
+  
+  @HiveField(2)
+  String unitId = '';
+  
+  @HiveField(3)
+  String unitDisplayName = '';
+  
+  @HiveField(4)
+  double estimatedGrams = 0.0;
   
   // Optional ingredient properties
+  @HiveField(5)
   String? notes; // "optional", "to taste", etc.
+  
+  @HiveField(6)
   bool isOptional = false;
+  
+  @HiveField(7)
   String? substitutions; // alternative ingredients
   
   TemplateIngredient();

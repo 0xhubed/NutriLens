@@ -1,43 +1,57 @@
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 import 'food_entry.dart';
 import 'macro_profile.dart';
 
 part 'meal_timing_data.g.dart';
 
-@collection
-class MealTimingData {
-  Id id = Isar.autoIncrement;
+@HiveType(typeId: 9)
+class MealTimingData extends HiveObject {
+  @HiveField(0)
+  String? id;
   
-  late DateTime timestamp;
-  late int timeSinceLastMealMinutes; // Duration stored as minutes
-  late int fastingWindowMinutes; // Duration stored as minutes
+  @HiveField(1)
+  DateTime timestamp = DateTime.now();
   
-  @enumerated
-  late MealType mealType;
+  @HiveField(2)
+  int timeSinceLastMealMinutes = 0; // Duration stored as minutes
   
-  late double totalCalories;
+  @HiveField(3)
+  int fastingWindowMinutes = 0; // Duration stored as minutes
+  
+  @HiveField(4)
+  MealType mealType = MealType.breakfast;
+  
+  @HiveField(5)
+  double totalCalories = 0.0;
   
   // Embedded macro profile for this meal
-  late double protein;
-  late double carbs;
-  late double fat;
-  late double fiber;
+  @HiveField(6)
+  double protein = 0.0;
+  
+  @HiveField(7)
+  double carbs = 0.0;
+  
+  @HiveField(8)
+  double fat = 0.0;
+  
+  @HiveField(9)
+  double fiber = 0.0;
   
   // Food types in this meal
+  @HiveField(10)
   List<String> foodTypes = []; // protein, carbs, fats, fiber
   
   // Link to the actual food entry if available
-  int? foodEntryId;
+  @HiveField(11)
+  String? foodEntryId;
   
   // Constructor
   MealTimingData();
   
   // Helper properties for Duration conversion
-  @ignore
   Duration get timeSinceLastMeal => Duration(minutes: timeSinceLastMealMinutes);
   set timeSinceLastMeal(Duration duration) => timeSinceLastMealMinutes = duration.inMinutes;
   
-  @ignore
   Duration get fastingWindow => Duration(minutes: fastingWindowMinutes);
   set fastingWindow(Duration duration) => fastingWindowMinutes = duration.inMinutes;
   
@@ -79,7 +93,6 @@ class MealTimingData {
   }
   
   // Get macro distribution as percentages
-  @ignore
   Map<String, double> get macroDistribution {
     final totalMacros = protein + carbs + fat;
     if (totalMacros == 0) {
@@ -94,15 +107,11 @@ class MealTimingData {
   }
   
   // Check if this meal is high in specific macros
-  @ignore
   bool get isHighProtein => macroDistribution['protein']! > 30;
-  @ignore
   bool get isHighCarb => macroDistribution['carbs']! > 50;
-  @ignore
   bool get isHighFat => macroDistribution['fat']! > 40;
   
   // Get meal size category
-  @ignore
   String get mealSizeCategory {
     if (totalCalories < 200) return 'snack';
     if (totalCalories < 400) return 'light_meal';

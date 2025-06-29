@@ -66,7 +66,7 @@ main() {
     flutter pub get
     
     # Step 3: Generate required files
-    print_status "Generating Isar schema files..."
+    print_status "Generating Hive adapters..."
     flutter pub run build_runner build --delete-conflicting-outputs
     
     if [ $? -ne 0 ]; then
@@ -137,7 +137,7 @@ case "${1:-}" in
             print_status "Getting Flutter dependencies..."
             flutter pub get
             
-            print_status "Generating Isar schema files..."
+            print_status "Generating Hive adapters..."
             flutter pub run build_runner build --delete-conflicting-outputs
             
             if [ $? -ne 0 ]; then

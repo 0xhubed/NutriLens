@@ -1,56 +1,77 @@
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 
 part 'metabolic_state.g.dart';
 
+@HiveType(typeId: 36)
 enum MetabolicPhase {
+  @HiveField(0)
   fed,
+  @HiveField(1)
   fasting,
+  @HiveField(2)
   fatBurning,
+  @HiveField(3)
   muscleBuilding,
 }
 
+@HiveType(typeId: 37)
 enum InsulinLevel {
+  @HiveField(0)
   low,
+  @HiveField(1)
   medium,
+  @HiveField(2)
   high,
 }
 
-@collection
-class MetabolicState {
-  Id id = Isar.autoIncrement;
+@HiveType(typeId: 6)
+class MetabolicState extends HiveObject {
+  @HiveField(0)
+  String? id;
   
-  late DateTime timestamp;
+  @HiveField(1)
+  DateTime timestamp = DateTime.now();
   
-  @enumerated
-  late MetabolicPhase phase;
+  @HiveField(2)
+  MetabolicPhase phase = MetabolicPhase.fed;
   
-  @enumerated
-  late InsulinLevel estimatedInsulinLevel;
+  @HiveField(3)
+  InsulinLevel estimatedInsulinLevel = InsulinLevel.medium;
   
-  late int timeInCurrentStateMinutes; // Duration stored as minutes
+  @HiveField(4)
+  int timeInCurrentStateMinutes = 0; // Duration stored as minutes
   
   // Active metabolic processes
+  @HiveField(5)
   List<String> activeProcesses = [];
   
   // Additional metabolic markers
-  late double fatBurningPotential; // 0.0 to 1.0
-  late double muscleBuildinPotential; // 0.0 to 1.0
-  late double digestiveLoad; // 0.0 to 1.0
+  @HiveField(6)
+  double fatBurningPotential = 0.0; // 0.0 to 1.0
+  
+  @HiveField(7)
+  double muscleBuildinPotential = 0.0; // 0.0 to 1.0
+  
+  @HiveField(8)
+  double digestiveLoad = 0.0; // 0.0 to 1.0
   
   // Context information
-  late int timeSinceLastMealMinutes; // Duration stored as minutes
-  late double lastMealCalories;
-  late double lastMealCarbs;
+  @HiveField(9)
+  int timeSinceLastMealMinutes = 0; // Duration stored as minutes
+  
+  @HiveField(10)
+  double lastMealCalories = 0.0;
+  
+  @HiveField(11)
+  double lastMealCarbs = 0.0;
   
   // Constructor
   MetabolicState();
   
   // Helper properties for Duration conversion
-  @ignore
   Duration get timeInCurrentState => Duration(minutes: timeInCurrentStateMinutes);
   set timeInCurrentState(Duration duration) => timeInCurrentStateMinutes = duration.inMinutes;
   
-  @ignore
   Duration get timeSinceLastMeal => Duration(minutes: timeSinceLastMealMinutes);
   set timeSinceLastMeal(Duration duration) => timeSinceLastMealMinutes = duration.inMinutes;
   
@@ -167,14 +188,10 @@ class MetabolicState {
   }
   
   // Helper methods
-  @ignore
   bool get isFasting => phase == MetabolicPhase.fasting || phase == MetabolicPhase.fatBurning;
-  @ignore
   bool get isFatBurning => fatBurningPotential > 0.5;
-  @ignore
   bool get isInsulinSensitive => estimatedInsulinLevel == InsulinLevel.low;
   
-  @ignore
   String get phaseDescription {
     switch (phase) {
       case MetabolicPhase.fed:
@@ -188,7 +205,6 @@ class MetabolicState {
     }
   }
   
-  @ignore
   String get recommendedAction {
     switch (phase) {
       case MetabolicPhase.fed:

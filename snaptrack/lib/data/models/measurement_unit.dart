@@ -1,12 +1,18 @@
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 
 part 'measurement_unit.g.dart';
 
+@HiveType(typeId: 34)
 enum MeasurementCategory {
+  @HiveField(0)
   liquid,
+  @HiveField(1)
   powder,
+  @HiveField(2)
   solid,
+  @HiveField(3)
   bulk,
+  @HiveField(4)
   custom,
 }
 
@@ -27,25 +33,38 @@ extension MeasurementCategoryExtension on MeasurementCategory {
   }
 }
 
-@collection
-class MeasurementUnit {
-  Id id = Isar.autoIncrement;
+@HiveType(typeId: 5)
+class MeasurementUnit extends HiveObject {
+  @HiveField(0)
+  String? id;
   
-  late String unitId; // 'tbsp', 'handful', 'scoop'
-  late String displayName; // 'Tablespoon', 'Handful', 'Scoop'
-  late String shortName; // 'tbsp', 'handful', 'scoop'
+  @HiveField(1)
+  String unitId = ''; // 'tbsp', 'handful', 'scoop'
   
-  @enumerated
-  late MeasurementCategory category;
+  @HiveField(2)
+  String displayName = ''; // 'Tablespoon', 'Handful', 'Scoop'
   
+  @HiveField(3)
+  String shortName = ''; // 'tbsp', 'handful', 'scoop'
+  
+  @HiveField(4)
+  MeasurementCategory category = MeasurementCategory.custom;
+  
+  @HiveField(5)
   double? gramEquivalent; // Standard conversion to grams
+  
+  @HiveField(6)
   String? description; // "Level tablespoon" vs "Heaped tablespoon"
   
   // Common conversions (ml for liquids, common food densities)
+  @HiveField(7)
   double? mlEquivalent;
   
   // Display information
+  @HiveField(8)
   String? symbol; // '℃', 'ml', 'g'
+  
+  @HiveField(9)
   bool isCommon = true; // Show in common suggestions
   
   MeasurementUnit();
@@ -81,22 +100,40 @@ class MeasurementUnit {
   }
 }
 
-@embedded
-class FoodPortion {
-  late String foodName;
-  late double quantity;
-  late String unitId; // Reference to MeasurementUnit.unitId
-  late String unitDisplayName; // Cached for display
+@HiveType(typeId: 22)
+class FoodPortion extends HiveObject {
+  @HiveField(0)
+  String foodName = '';
   
+  @HiveField(1)
+  double quantity = 0.0;
+  
+  @HiveField(2)
+  String unitId = ''; // Reference to MeasurementUnit.unitId
+  
+  @HiveField(3)
+  String unitDisplayName = ''; // Cached for display
+  
+  @HiveField(4)
   double? estimatedGrams; // Calculated or user-provided weight
+  
+  @HiveField(5)
   double? userCorrectedGrams; // User's manual correction
   
   // Nutrition per portion (calculated from total nutrition)
+  @HiveField(6)
   double calories = 0.0;
+  
+  @HiveField(7)
   double protein = 0.0;
+  
+  @HiveField(8)
   double carbs = 0.0;
+  
+  @HiveField(9)
   double fat = 0.0;
   
+  @HiveField(10)
   String? notes; // "heaped", "level", "rounded"
   
   FoodPortion();
@@ -148,21 +185,35 @@ class FoodPortion {
 }
 
 // Food-specific conversion factors
-@collection
-class FoodConversion {
-  Id id = Isar.autoIncrement;
+@HiveType(typeId: 23)
+class FoodConversion extends HiveObject {
+  @HiveField(0)
+  String? id;
   
-  late String foodName; // "peanut butter", "whey protein"
-  late String unitId; // "tbsp", "scoop"
-  late double gramsPerUnit; // 32g per tbsp of peanut butter
+  @HiveField(1)
+  String foodName = ''; // "peanut butter", "whey protein"
+  
+  @HiveField(2)
+  String unitId = ''; // "tbsp", "scoop"
+  
+  @HiveField(3)
+  double gramsPerUnit = 0.0; // 32g per tbsp of peanut butter
   
   // Source information
+  @HiveField(4)
   String? source; // "USDA", "user-measured", "manufacturer"
+  
+  @HiveField(5)
   bool isUserGenerated = false;
+  
+  @HiveField(6)
   DateTime? createdAt;
   
   // Confidence and usage
+  @HiveField(7)
   double confidence = 1.0; // 0.0 to 1.0
+  
+  @HiveField(8)
   int usageCount = 0;
   
   FoodConversion();
@@ -180,14 +231,21 @@ class FoodConversion {
 }
 
 // User's personal measurement preferences
-@collection
-class UserMeasurementPreference {
-  Id id = Isar.autoIncrement;
+@HiveType(typeId: 24)
+class UserMeasurementPreference extends HiveObject {
+  @HiveField(0)
+  String? id;
   
-  late String foodCategory; // "protein_powder", "nuts", "liquids"
-  late String preferredUnitId;
+  @HiveField(1)
+  String foodCategory = ''; // "protein_powder", "nuts", "liquids"
   
+  @HiveField(2)
+  String preferredUnitId = '';
+  
+  @HiveField(3)
   int usageCount = 1;
+  
+  @HiveField(4)
   DateTime lastUsed = DateTime.now();
   
   UserMeasurementPreference();

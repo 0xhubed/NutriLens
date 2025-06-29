@@ -1,58 +1,89 @@
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 import 'food_entry.dart';
 import 'meal_timing_data.dart';
 import 'macro_profile.dart';
 
 part 'eating_pattern.g.dart';
 
-@collection
-class EatingPattern {
-  Id id = Isar.autoIncrement;
+@HiveType(typeId: 8)
+class EatingPattern extends HiveObject {
+  @HiveField(0)
+  String? id;
   
-  late DateTime date; // Date this pattern represents
+  @HiveField(1)
+  DateTime date = DateTime.now(); // Date this pattern represents
   
-  late int averageEatingWindowMinutes; // Duration stored as minutes
-  late int averageFastingWindowMinutes; // Duration stored as minutes
+  @HiveField(2)
+  int averageEatingWindowMinutes = 0; // Duration stored as minutes
+  
+  @HiveField(3)
+  int averageFastingWindowMinutes = 0; // Duration stored as minutes
   
   // Typical meal times for this day
+  @HiveField(4)
   List<DateTime> typicalMealTimes = [];
   
-  late double mealFrequency; // meals per day
+  @HiveField(5)
+  double mealFrequency = 0.0; // meals per day
   
   // Macro distribution per meal type
-  late double breakfastProtein;
-  late double breakfastCarbs;
-  late double breakfastFat;
+  @HiveField(6)
+  double breakfastProtein = 0.0;
   
-  late double lunchProtein;
-  late double lunchCarbs;
-  late double lunchFat;
+  @HiveField(7)
+  double breakfastCarbs = 0.0;
   
-  late double dinnerProtein;
-  late double dinnerCarbs;
-  late double dinnerFat;
+  @HiveField(8)
+  double breakfastFat = 0.0;
   
-  late double snackProtein;
-  late double snackCarbs;
-  late double snackFat;
+  @HiveField(9)
+  double lunchProtein = 0.0;
+  
+  @HiveField(10)
+  double lunchCarbs = 0.0;
+  
+  @HiveField(11)
+  double lunchFat = 0.0;
+  
+  @HiveField(12)
+  double dinnerProtein = 0.0;
+  
+  @HiveField(13)
+  double dinnerCarbs = 0.0;
+  
+  @HiveField(14)
+  double dinnerFat = 0.0;
+  
+  @HiveField(15)
+  double snackProtein = 0.0;
+  
+  @HiveField(16)
+  double snackCarbs = 0.0;
+  
+  @HiveField(17)
+  double snackFat = 0.0;
   
   // Pattern quality metrics
-  late double consistencyScore; // 0.0 to 1.0
-  late double metabolicOptimizationScore; // 0.0 to 1.0
+  @HiveField(18)
+  double consistencyScore = 0.0; // 0.0 to 1.0
+  
+  @HiveField(19)
+  double metabolicOptimizationScore = 0.0; // 0.0 to 1.0
   
   // Timing insights
+  @HiveField(20)
   bool isIntermittentFasting = false;
+  
+  @HiveField(21)
   String? detectedPattern; // '16:8', '18:6', 'OMAD', etc.
   
   // Constructor
   EatingPattern();
   
   // Helper properties for Duration conversion
-  @ignore
   Duration get averageEatingWindow => Duration(minutes: averageEatingWindowMinutes);
   set averageEatingWindow(Duration duration) => averageEatingWindowMinutes = duration.inMinutes;
   
-  @ignore
   Duration get averageFastingWindow => Duration(minutes: averageFastingWindowMinutes);
   set averageFastingWindow(Duration duration) => averageFastingWindowMinutes = duration.inMinutes;
   
@@ -240,7 +271,6 @@ class EatingPattern {
     }
   }
   
-  @ignore
   String get patternSummary {
     if (detectedPattern != null) {
       return '$detectedPattern Intermittent Fasting';
@@ -248,7 +278,6 @@ class EatingPattern {
     return '${averageEatingWindow.inHours}h eating window';
   }
   
-  @ignore
   String get qualityAssessment {
     if (metabolicOptimizationScore > 0.8) return 'Excellent';
     if (metabolicOptimizationScore > 0.6) return 'Good';

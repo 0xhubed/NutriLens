@@ -1,21 +1,36 @@
+import 'package:hive/hive.dart';
 import 'meal_timing_data.dart';
 import 'metabolic_state.dart';
 import 'eating_pattern.dart';
 import 'user_metrics.dart';
 
+part 'metabolic_context.g.dart';
+
+@HiveType(typeId: 40)
 enum UserGoals {
+  @HiveField(0)
   weightLoss,
+  @HiveField(1)
   muscleGain,
+  @HiveField(2)
   maintenance,
+  @HiveField(3)
   performance,
+  @HiveField(4)
   health,
 }
 
+@HiveType(typeId: 41)
 enum ActivityLevel {
+  @HiveField(0)
   sedentary,
+  @HiveField(1)
   lightlyActive,
+  @HiveField(2)
   moderatelyActive,
+  @HiveField(3)
   veryActive,
+  @HiveField(4)
   extremelyActive,
 }
 

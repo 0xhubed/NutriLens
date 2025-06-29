@@ -35,7 +35,7 @@ cd snaptrack
 flutter pub get
 ```
 
-3. Generate code (for Isar database):
+3. Generate code (for Hive database):
 ```bash
 dart run build_runner build
 ```
@@ -47,23 +47,34 @@ flutter run
 
 ## Configuration
 
-### OpenAI API Key
+### AI Provider Configuration
 
-To use AI-powered food analysis:
+To use AI-powered food analysis, configure one or more providers:
 
+**OpenAI:**
 1. Get an API key from [OpenAI](https://platform.openai.com/api-keys)
-2. Open the app and go to Settings
-3. Enter your API key securely
+2. Go to Settings > AI Provider Settings
+3. Select OpenAI and enter your API key
+
+**Anthropic:**
+1. Get an API key from [Anthropic](https://console.anthropic.com/)
+2. Go to Settings > AI Provider Settings  
+3. Select Anthropic and enter your API key
+
+**Google Gemini:**
+1. Get an API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Go to Settings > AI Provider Settings
+3. Select Gemini and enter your API key
 
 The API key is stored locally using Flutter Secure Storage and never leaves your device except for API calls.
 
 ## Architecture
 
 - **State Management**: Riverpod
-- **Database**: Isar (local, NoSQL)
+- **Database**: Hive (local, NoSQL)
 - **Navigation**: go_router
 - **UI**: Material 3
-- **AI Integration**: OpenAI Vision API
+- **AI Integration**: Multiple AI providers (OpenAI, Anthropic, Gemini)
 
 ## Project Structure
 
@@ -94,7 +105,7 @@ SnapTrack is built with privacy as a core principle:
 - ✅ No analytics or tracking
 - ✅ No data sharing with third parties
 
-The only external communication is with the OpenAI API for food analysis, and only when you explicitly request it.
+The only external communication is with AI providers (OpenAI, Anthropic, or Gemini) for food analysis, and only when you explicitly request it.
 
 ## Contributing
 

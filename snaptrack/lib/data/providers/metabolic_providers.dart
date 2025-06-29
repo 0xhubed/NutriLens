@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
 import '../services/metabolic_analysis_service.dart';
 import '../services/metabolic_context_builder.dart';
 import '../services/metabolic_coaching_service.dart';
@@ -10,15 +9,9 @@ import '../models/eating_pattern.dart';
 import '../models/food_entry.dart'; // For MealType
 import 'ai_provider_manager_provider.dart';
 
-// Database provider (assume this exists)
-final isarProvider = Provider<Isar>((ref) {
-  throw UnimplementedError('Isar instance should be provided at app startup');
-});
-
 // Core services
 final metabolicAnalysisServiceProvider = Provider<MetabolicAnalysisService>((ref) {
-  final isar = ref.watch(isarProvider);
-  return MetabolicAnalysisService(isar);
+  return MetabolicAnalysisService();
 });
 
 final metabolicContextBuilderProvider = Provider<MetabolicContextBuilder>((ref) {

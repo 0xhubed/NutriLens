@@ -1,72 +1,69 @@
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 import '../models/meal_template.dart';
 import '../models/food_entry.dart';
 import 'ai_provider.dart';
 
 class TemplateService {
-  final Isar _isar;
+  Box<MealTemplate> get _templateBox => Hive.box<MealTemplate>('mealTemplates');
   
-  TemplateService(this._isar);
+  TemplateService();
   
   // Create template from food entry
   Future<MealTemplate> createTemplate(FoodEntry entry, {String? customName}) async {
     final template = MealTemplate.fromFoodEntry(entry, customName: customName);
     
-    await _isar.writeTxn(() async {
-      await _isar.mealTemplates.put(template);
-    });
+    // Generate ID if not present
+    template.id ??= DateTime.now().millisecondsSinceEpoch.toString();
+    await _templateBox.put(template.id, template);
     
     return template;
   }
   
   // Get all templates
   Future<List<MealTemplate>> getAllTemplates() async {
-    return await _isar.mealTemplates.where().findAll();
+    return _templateBox.values.toList();
   }
   
   // Get templates by meal type
   Future<List<MealTemplate>> getTemplatesByMealType(MealType mealType) async {
-    return await _isar.mealTemplates
-        .filter()
-        .mealTypeEqualTo(mealType)
-        .findAll();
+    return _templateBox.values
+        .where((template) => template.mealType == mealType)
+        .toList();
   }
   
   // Get favorite templates
   Future<List<MealTemplate>> getFavoriteTemplates() async {
-    return await _isar.mealTemplates
-        .filter()
-        .isFavoriteEqualTo(true)
-        .findAll();
+    return _templateBox.values
+        .where((template) => template.isFavorite)
+        .toList();
   }
   
   // Get most used templates
   Future<List<MealTemplate>> getMostUsedTemplates({int limit = 10}) async {
-    return await _isar.mealTemplates
-        .where()
-        .sortByUsageCountDesc()
-        .limit(limit)
-        .findAll();
+    final templates = _templateBox.values.toList()
+      ..sort((a, b) => b.usageCount.compareTo(a.usageCount));
+    
+    return templates.take(limit).toList();
   }
   
   // Get recently used templates
   Future<List<MealTemplate>> getRecentlyUsedTemplates({int limit = 10}) async {
-    return await _isar.mealTemplates
-        .filter()
-        .lastUsedIsNotNull()
-        .sortByLastUsedDesc()
-        .limit(limit)
-        .findAll();
+    final templates = _templateBox.values
+        .where((template) => template.lastUsed != null)
+        .toList()
+      ..sort((a, b) => b.lastUsed!.compareTo(a.lastUsed!));
+    
+    return templates.take(limit).toList();
   }
   
   // Search templates
   Future<List<MealTemplate>> searchTemplates(String query) async {
-    return await _isar.mealTemplates
-        .filter()
-        .nameContains(query, caseSensitive: false)
-        .or()
-        .descriptionContains(query, caseSensitive: false)
-        .findAll();
+    final lowerQuery = query.toLowerCase();
+    return _templateBox.values
+        .where((template) =>
+            template.name.toLowerCase().contains(lowerQuery) ||
+            (template.description?.toLowerCase().contains(lowerQuery) ?? false))
+        .toList();
   }
   
   // Use template to create food entry
@@ -74,9 +71,7 @@ class TemplateService {
     template.incrementUsage();
     
     // Update template usage
-    await _isar.writeTxn(() async {
-      await _isar.mealTemplates.put(template);
-    });
+    await _templateBox.put(template.id, template);
     
     // Calculate totals with multipliers
     double totalCalories = 0;
@@ -125,16 +120,13 @@ class TemplateService {
   
   // Update template
   Future<void> updateTemplate(MealTemplate template) async {
-    await _isar.writeTxn(() async {
-      await _isar.mealTemplates.put(template);
-    });
+    if (template.id == null) return;
+    await _templateBox.put(template.id, template);
   }
   
   // Delete template
-  Future<void> deleteTemplate(int templateId) async {
-    await _isar.writeTxn(() async {
-      await _isar.mealTemplates.delete(templateId);
-    });
+  Future<void> deleteTemplate(String templateId) async {
+    await _templateBox.delete(templateId);
   }
   
   // Toggle favorite
@@ -148,10 +140,9 @@ class TemplateService {
     final currentMealType = mealType ?? FoodEntry.suggestMealTypeByTime(DateTime.now());
     
     // Get templates for current meal type, prioritizing recently used and favorites
-    final templates = await _isar.mealTemplates
-        .filter()
-        .mealTypeEqualTo(currentMealType)
-        .findAll();
+    final templates = _templateBox.values
+        .where((template) => template.mealType == currentMealType)
+        .toList();
     
     // Sort by: favorites first, then by usage count, then by recent usage
     templates.sort((a, b) {
@@ -175,7 +166,7 @@ class TemplateService {
   Future<List<MealTemplate>> getTemplatesByDietaryTags(List<DietaryTag> tags) async {
     if (tags.isEmpty) return [];
     
-    final templates = await _isar.mealTemplates.where().findAll();
+    final templates = _templateBox.values.toList();
     
     return templates.where((template) {
       return tags.any((tag) => template.dietaryTags.contains(tag));
@@ -184,7 +175,7 @@ class TemplateService {
   
   // Get template statistics
   Future<Map<String, dynamic>> getTemplateStats() async {
-    final templates = await _isar.mealTemplates.where().findAll();
+    final templates = _templateBox.values.toList();
     
     final totalTemplates = templates.length;
     final totalUsage = templates.fold<int>(0, (sum, t) => sum + t.usageCount);

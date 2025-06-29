@@ -7,8 +7,7 @@ import '../services/database_service.dart';
 
 // Measurement Guide Service Provider
 final measurementGuideServiceProvider = Provider<MeasurementGuideService>((ref) {
-  final databaseService = ref.watch(databaseServiceProvider);
-  return MeasurementGuideService(databaseService.database);
+  return MeasurementGuideService();
 });
 
 // All guides

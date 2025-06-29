@@ -1,19 +1,30 @@
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 
 part 'activity_entry.g.dart';
 
+@HiveType(typeId: 38)
 enum ActivityCategory {
+  @HiveField(0)
   cardio,
+  @HiveField(1)
   strength,
+  @HiveField(2)
   sports,
+  @HiveField(3)
   flexibility,
+  @HiveField(4)
   water,
+  @HiveField(5)
   other,
 }
 
+@HiveType(typeId: 39)
 enum Intensity {
+  @HiveField(0)
   light,
+  @HiveField(1)
   moderate,
+  @HiveField(2)
   vigorous,
 }
 
@@ -41,33 +52,51 @@ extension IntensityExtension on Intensity {
   }
 }
 
-@collection
-class ActivityEntry {
-  Id id = Isar.autoIncrement;
+@HiveType(typeId: 3)
+class ActivityEntry extends HiveObject {
+  @HiveField(0)
+  String? id;
   
-  late String activityName;
-  late double metValue;
-  late int durationMinutes;
-  late double caloriesBurned;
-  late DateTime timestamp;
+  @HiveField(1)
+  String activityName = '';
   
-  @enumerated
+  @HiveField(2)
+  double metValue = 0.0;
+  
+  @HiveField(3)
+  int durationMinutes = 0;
+  
+  @HiveField(4)
+  double caloriesBurned = 0.0;
+  
+  @HiveField(5)
+  DateTime timestamp = DateTime.now();
+  
+  @HiveField(6)
   ActivityCategory category = ActivityCategory.other;
   
-  @enumerated
+  @HiveField(7)
   Intensity intensity = Intensity.moderate;
   
+  @HiveField(8)
   String? notes;
   
   // User weight at time of activity (for accurate calorie calculation)
+  @HiveField(9)
   double? userWeight;
   
   // Whether this was a manually entered activity or from a fitness tracker
+  @HiveField(10)
   bool isManualEntry = true;
   
   // Optional fields for detailed tracking
+  @HiveField(11)
   double? heartRateAverage;
+  
+  @HiveField(12)
   double? distanceKm;
+  
+  @HiveField(13)
   String? location;
   
   // Computed properties
@@ -89,15 +118,19 @@ class ActivityEntry {
   }
 }
 
-@embedded
-class Activity {
-  late String name;
-  late double baseMET;
+@HiveType(typeId: 28)
+class Activity extends HiveObject {
+  @HiveField(0)
+  String name = '';
   
-  @enumerated
-  late ActivityCategory category;
+  @HiveField(1)
+  double baseMET = 0.0;
   
-  late String description;
+  @HiveField(2)
+  ActivityCategory category = ActivityCategory.other;
+  
+  @HiveField(3)
+  String description = '';
   
   Activity();
   

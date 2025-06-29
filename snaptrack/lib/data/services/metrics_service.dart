@@ -1,73 +1,79 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 
 import '../models/user_metrics.dart';
-import 'database_service.dart';
 
 final metricsServiceProvider = Provider<MetricsService>((ref) {
-  final databaseService = ref.watch(databaseServiceProvider);
-  return MetricsService(databaseService.database);
+  return MetricsService();
 });
 
 class MetricsService {
-  final Isar isar;
+  Box<UserMetrics> get _metricsBox => Hive.box<UserMetrics>('userMetrics');
   
-  MetricsService(this.isar);
+  MetricsService();
 
   // User Metrics CRUD operations
   Future<void> saveMetrics(UserMetrics metrics) async {
-    await isar.writeTxn(() async {
-      await isar.userMetrics.put(metrics);
-    });
+    // Generate key based on date
+    final dateKey = _generateDateKey(metrics.date);
+    await _metricsBox.put(dateKey, metrics);
   }
 
   Future<void> updateMetrics(UserMetrics metrics) async {
-    await isar.writeTxn(() async {
-      await isar.userMetrics.put(metrics);
-    });
+    final dateKey = _generateDateKey(metrics.date);
+    await _metricsBox.put(dateKey, metrics);
   }
 
   Future<UserMetrics?> getMetricsForDate(DateTime date) async {
-    final dateOnly = DateTime(date.year, date.month, date.day);
-    final endOfDay = dateOnly.add(const Duration(days: 1));
-    return await isar.userMetrics
-        .filter()
-        .dateBetween(dateOnly, endOfDay)
-        .findFirst();
+    final dateKey = _generateDateKey(date);
+    return _metricsBox.get(dateKey);
   }
 
   Future<UserMetrics?> getLatestMetrics() async {
-    return await isar.userMetrics
-        .where()
-        .sortByDateDesc()
-        .findFirst();
+    final metrics = _metricsBox.values.toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+    
+    return metrics.isNotEmpty ? metrics.first : null;
   }
 
   Future<List<UserMetrics>> getMetricsInRange(DateTime startDate, DateTime endDate) async {
-    return await isar.userMetrics
-        .filter()
-        .dateBetween(startDate, endDate, includeUpper: false)
-        .sortByDate()
-        .findAll();
+    return _metricsBox.values
+        .where((metrics) =>
+            metrics.date.isAfter(startDate) &&
+            metrics.date.isBefore(endDate))
+        .toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
   }
 
   Stream<UserMetrics?> watchTodayMetrics() {
     final today = DateTime.now();
-    final dateOnly = DateTime(today.year, today.month, today.day);
+    final dateKey = _generateDateKey(today);
     
-    final endOfDay = dateOnly.add(const Duration(days: 1));
-    return isar.userMetrics
-        .filter()
-        .dateBetween(dateOnly, endOfDay)
-        .watch(fireImmediately: true)
-        .map((list) => list.isEmpty ? null : list.first);
+    print('📊 MetricsService: Setting up watchTodayMetrics stream...');
+    
+    // Use periodic polling as workaround for Hive watch issues
+    return Stream.periodic(Duration(milliseconds: 500)).map((_) {
+      final metrics = _metricsBox.get(dateKey);
+      print('📊 MetricsService: Today metrics check: ${metrics?.weight ?? 0} weight');
+      return metrics;
+    }).distinct((prev, next) => 
+      (prev?.weight ?? 0) == (next?.weight ?? 0) &&
+      (prev?.waterLiters ?? 0) == (next?.waterLiters ?? 0) &&
+      (prev?.sleepHours ?? 0) == (next?.sleepHours ?? 0)
+    );
   }
 
   Stream<List<UserMetrics>> watchAllMetrics() {
-    return isar.userMetrics
-        .where()
-        .sortByDateDesc()
-        .watch(fireImmediately: true);
+    print('📊 MetricsService: Setting up watchAllMetrics stream...');
+    
+    // Use periodic polling as workaround for Hive watch issues
+    return Stream.periodic(Duration(milliseconds: 500)).map((_) {
+      final metrics = _metricsBox.values.toList()
+        ..sort((a, b) => b.date.compareTo(a.date));
+      print('📊 MetricsService: All metrics check: ${metrics.length} entries');
+      return metrics;
+    }).distinct((prev, next) => prev.length == next.length && 
+      (prev.isEmpty || next.isEmpty || prev.first.date == next.first.date));
   }
 
   // Quick logging methods
@@ -222,6 +228,12 @@ class MetricsService {
       trend: trend,
       change: change,
     );
+  }
+  
+  // Helper method to generate consistent date keys
+  String _generateDateKey(DateTime date) {
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    return '${dateOnly.year}-${dateOnly.month.toString().padLeft(2, '0')}-${dateOnly.day.toString().padLeft(2, '0')}';
   }
 }
 

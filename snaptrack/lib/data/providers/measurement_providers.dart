@@ -9,8 +9,7 @@ import '../../ui/widgets/multi_unit_input_widget.dart';
 
 // Conversion Service Provider
 final conversionServiceProvider = Provider<ConversionService>((ref) {
-  final databaseService = ref.watch(databaseServiceProvider);
-  return ConversionService(databaseService.database);
+  return ConversionService();
 });
 
 // All measurement units

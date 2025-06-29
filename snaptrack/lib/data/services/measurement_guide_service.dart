@@ -1,42 +1,41 @@
-import 'package:isar/isar.dart';
+import 'package:hive/hive.dart';
 
 import '../models/measurement_guide.dart';
 import '../models/measurement_unit.dart';
 
 class MeasurementGuideService {
-  final Isar isar;
+  Box<MeasurementGuide> get _guideBox => Hive.box<MeasurementGuide>('measurementGuides');
   
-  MeasurementGuideService(this.isar);
+  MeasurementGuideService();
 
   /// Initialize guides database with predefined guides
   Future<void> initializeGuides() async {
-    final existingCount = await isar.measurementGuides.count();
-    if (existingCount > 0) return; // Already initialized
+    if (_guideBox.isNotEmpty) return; // Already initialized
     
     final predefinedGuides = MeasurementGuideDatabase.getPredefinedGuides();
     
-    await isar.writeTxn(() async {
-      await isar.measurementGuides.putAll(predefinedGuides);
-    });
+    for (int i = 0; i < predefinedGuides.length; i++) {
+      final guide = predefinedGuides[i];
+      guide.id ??= (i + 1).toString(); // Assign sequential IDs
+      await _guideBox.put(guide.id, guide);
+    }
   }
 
   /// Get all guides
   Future<List<MeasurementGuide>> getAllGuides() async {
     await initializeGuides();
-    return await isar.measurementGuides
-        .where()
-        .sortByTitle()
-        .findAll();
+    final guides = _guideBox.values.toList()
+      ..sort((a, b) => a.title.compareTo(b.title));
+    return guides;
   }
 
   /// Get guide for specific unit
   Future<MeasurementGuide?> getGuideForUnit(String unitId) async {
     await initializeGuides();
     
-    final guide = await isar.measurementGuides
-        .filter()
-        .unitIdEqualTo(unitId)
-        .findFirst();
+    final guide = _guideBox.values
+        .where((guide) => guide.unitId == unitId)
+        .firstOrNull;
     
     if (guide != null) {
       await _markAsViewed(guide);
@@ -48,11 +47,11 @@ class MeasurementGuideService {
   /// Get guides by category
   Future<List<MeasurementGuide>> getGuidesByCategory(MeasurementCategory category) async {
     await initializeGuides();
-    return await isar.measurementGuides
-        .filter()
-        .categoryEqualTo(category)
-        .sortByTitle()
-        .findAll();
+    final guides = _guideBox.values
+        .where((guide) => guide.category == category)
+        .toList()
+      ..sort((a, b) => a.title.compareTo(b.title));
+    return guides;
   }
 
   /// Search guides
@@ -62,50 +61,45 @@ class MeasurementGuideService {
     await initializeGuides();
     final lowerQuery = query.toLowerCase();
     
-    return await isar.measurementGuides
-        .filter()
-        .titleContains(query, caseSensitive: false)
-        .or()
-        .descriptionContains(query, caseSensitive: false)
-        .or()
-        .visualComparisonContains(query, caseSensitive: false)
-        .or()
-        .bestForElementContains(lowerQuery)
-        .or()
-        .examplesElementContains(lowerQuery)
-        .sortByViewCountDesc()
-        .findAll();
+    final guides = _guideBox.values
+        .where((guide) =>
+            guide.title.toLowerCase().contains(lowerQuery) ||
+            guide.description.toLowerCase().contains(lowerQuery) ||
+            guide.visualComparison.toLowerCase().contains(lowerQuery) ||
+            guide.bestFor.any((item) => item.toLowerCase().contains(lowerQuery)) ||
+            guide.examples.any((item) => item.toLowerCase().contains(lowerQuery)))
+        .toList()
+      ..sort((a, b) => b.viewCount.compareTo(a.viewCount));
+    
+    return guides;
   }
 
   /// Get favorite guides
   Future<List<MeasurementGuide>> getFavoriteGuides() async {
     await initializeGuides();
-    return await isar.measurementGuides
-        .filter()
-        .isUserFavoriteEqualTo(true)
-        .sortByTitle()
-        .findAll();
+    final guides = _guideBox.values
+        .where((guide) => guide.isUserFavorite)
+        .toList()
+      ..sort((a, b) => a.title.compareTo(b.title));
+    return guides;
   }
 
   /// Get popular guides (most viewed)
   Future<List<MeasurementGuide>> getPopularGuides({int limit = 10}) async {
     await initializeGuides();
-    return await isar.measurementGuides
-        .where()
-        .sortByViewCountDesc()
-        .limit(limit)
-        .findAll();
+    final guides = _guideBox.values.toList()
+      ..sort((a, b) => b.viewCount.compareTo(a.viewCount));
+    return guides.take(limit).toList();
   }
 
   /// Get recently viewed guides
   Future<List<MeasurementGuide>> getRecentlyViewedGuides({int limit = 10}) async {
     await initializeGuides();
-    return await isar.measurementGuides
-        .filter()
-        .lastViewedIsNotNull()
-        .sortByLastViewedDesc()
-        .limit(limit)
-        .findAll();
+    final guides = _guideBox.values
+        .where((guide) => guide.lastViewed != null)
+        .toList()
+      ..sort((a, b) => b.lastViewed!.compareTo(a.lastViewed!));
+    return guides.take(limit).toList();
   }
 
   /// Get quick reference guides (most essential ones)
@@ -117,10 +111,9 @@ class MeasurementGuideService {
     
     final guides = <MeasurementGuide>[];
     for (final unitId in essentialUnits) {
-      final guide = await isar.measurementGuides
-          .filter()
-          .unitIdEqualTo(unitId)
-          .findFirst();
+      final guide = _guideBox.values
+          .where((guide) => guide.unitId == unitId)
+          .firstOrNull;
       if (guide != null) {
         guides.add(guide);
       }
@@ -136,84 +129,83 @@ class MeasurementGuideService {
     final lowerFoodName = foodName.toLowerCase();
     
     // Find guides where the food name matches the bestFor categories
-    return await isar.measurementGuides
-        .filter()
-        .bestForElementContains(lowerFoodName)
-        .or()
-        .examplesElementContains(lowerFoodName)
-        .sortByViewCountDesc()
-        .findAll();
+    final guides = _guideBox.values
+        .where((guide) =>
+            guide.bestFor.any((item) => item.toLowerCase().contains(lowerFoodName)) ||
+            guide.examples.any((item) => item.toLowerCase().contains(lowerFoodName)))
+        .toList()
+      ..sort((a, b) => b.viewCount.compareTo(a.viewCount));
+    
+    return guides;
   }
 
   /// Get hand measurement guides
   Future<List<MeasurementGuide>> getHandMeasurementGuides() async {
     await initializeGuides();
     
-    return await isar.measurementGuides
-        .filter()
-        .handComparisonsIsNotEmpty()
-        .sortByTitle()
-        .findAll();
+    final guides = _guideBox.values
+        .where((guide) => guide.handComparisons.isNotEmpty)
+        .toList()
+      ..sort((a, b) => a.title.compareTo(b.title));
+    
+    return guides;
   }
 
   /// Get cooking measurement guides
   Future<List<MeasurementGuide>> getCookingMeasurementGuides() async {
     await initializeGuides();
     
-    return await isar.measurementGuides
-        .filter()
-        .categoryEqualTo(MeasurementCategory.liquid)
-        .or()
-        .categoryEqualTo(MeasurementCategory.powder)
-        .sortByTitle()
-        .findAll();
+    final guides = _guideBox.values
+        .where((guide) => 
+            guide.category == MeasurementCategory.liquid ||
+            guide.category == MeasurementCategory.powder)
+        .toList()
+      ..sort((a, b) => a.title.compareTo(b.title));
+    
+    return guides;
   }
 
   /// Get weight measurement guides
   Future<List<MeasurementGuide>> getWeightMeasurementGuides() async {
     await initializeGuides();
     
-    return await isar.measurementGuides
-        .filter()
-        .categoryEqualTo(MeasurementCategory.powder)
-        .sortByTitle()
-        .findAll();
+    final guides = _guideBox.values
+        .where((guide) => guide.category == MeasurementCategory.powder)
+        .toList()
+      ..sort((a, b) => a.title.compareTo(b.title));
+    
+    return guides;
   }
 
   /// Toggle favorite status
   Future<void> toggleFavorite(int guideId) async {
-    await isar.writeTxn(() async {
-      final guide = await isar.measurementGuides.get(guideId);
-      if (guide != null) {
-        guide.isUserFavorite = !guide.isUserFavorite;
-        await isar.measurementGuides.put(guide);
-      }
-    });
+    final guide = _guideBox.get(guideId);
+    if (guide != null) {
+      guide.isUserFavorite = !guide.isUserFavorite;
+      await _guideBox.put(guideId, guide);
+    }
   }
 
   /// Get guide statistics
   Future<GuideStatistics> getGuideStatistics() async {
     await initializeGuides();
     
-    final totalGuides = await isar.measurementGuides.count();
-    final favoriteGuides = await isar.measurementGuides
-        .filter()
-        .isUserFavoriteEqualTo(true)
-        .count();
+    final totalGuides = _guideBox.length;
+    final favoriteGuides = _guideBox.values
+        .where((guide) => guide.isUserFavorite)
+        .length;
     
-    final viewedGuides = await isar.measurementGuides
-        .filter()
-        .viewCountGreaterThan(0)
-        .count();
+    final viewedGuides = _guideBox.values
+        .where((guide) => guide.viewCount > 0)
+        .length;
     
     final totalViews = await _getTotalViews();
     
     final categoryCounts = <MeasurementCategory, int>{};
     for (final category in MeasurementCategory.values) {
-      final count = await isar.measurementGuides
-          .filter()
-          .categoryEqualTo(category)
-          .count();
+      final count = _guideBox.values
+          .where((guide) => guide.category == category)
+          .length;
       categoryCounts[category] = count;
     }
     
@@ -228,36 +220,30 @@ class MeasurementGuideService {
 
   /// Create custom guide
   Future<void> createCustomGuide(MeasurementGuide guide) async {
-    await isar.writeTxn(() async {
-      await isar.measurementGuides.put(guide);
-    });
+    guide.id ??= DateTime.now().millisecondsSinceEpoch.toString();
+    await _guideBox.put(guide.id, guide);
   }
 
   /// Update guide
   Future<void> updateGuide(MeasurementGuide guide) async {
-    await isar.writeTxn(() async {
-      await isar.measurementGuides.put(guide);
-    });
+    if (guide.id == null) return;
+    await _guideBox.put(guide.id, guide);
   }
 
   /// Delete guide
   Future<void> deleteGuide(int guideId) async {
-    await isar.writeTxn(() async {
-      await isar.measurementGuides.delete(guideId);
-    });
+    await _guideBox.delete(guideId);
   }
 
   /// Private helper methods
   
   Future<void> _markAsViewed(MeasurementGuide guide) async {
     guide.markAsViewed();
-    await isar.writeTxn(() async {
-      await isar.measurementGuides.put(guide);
-    });
+    await _guideBox.put(guide.id, guide);
   }
 
   Future<int> _getTotalViews() async {
-    final guides = await isar.measurementGuides.where().findAll();
+    final guides = _guideBox.values.toList();
     return guides.fold<int>(0, (int sum, guide) => sum + guide.viewCount);
   }
 }
