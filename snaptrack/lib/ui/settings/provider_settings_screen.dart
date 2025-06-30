@@ -44,7 +44,6 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
   
   @override
   void dispose() {
-    _fadeController.removeStatusListener(() {});
     _fadeController.dispose();
     super.dispose();
   }
@@ -950,7 +949,6 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
                 margin: const EdgeInsets.all(AppSpacing.md),
               ),
             );
-          }
           break;
         case 'setFallback':
           await providerManager.setFallbackProvider(provider.providerId);
@@ -976,7 +974,6 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
                 margin: const EdgeInsets.all(AppSpacing.md),
               ),
             );
-          }
           break;
         case 'test':
           _testProvider(provider);
@@ -1009,7 +1006,6 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
         );
       }
     }
-  }
   
   Future<void> _showConfigureDialog(AIProvider provider) async {
     final controllers = <String, TextEditingController>{};
@@ -1019,11 +1015,11 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
       controllers[key] = TextEditingController();
     }
     
-    final colorScheme = Theme.of(context).colorScheme;
-    
     return showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return AlertDialog(
         backgroundColor: colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.extraLarge,
@@ -1108,9 +1104,8 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
                       margin: const EdgeInsets.all(AppSpacing.md),
                     ),
                   );
-                }
               } catch (e) {
-                if (mounted) {
+                if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Row(
@@ -1138,7 +1133,8 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
             child: const Text('Save'),
           ),
         ],
-      ),
+      );
+      }
     );
   }
   

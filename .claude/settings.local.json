@@ -34,7 +34,10 @@
       "Bash(export PATH=\"$PATH:/opt/flutter/bin\")",
       "Bash(firebase:*)",
       "Bash(npm uninstall:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(true)",
+      "Bash(./deploy-to-firebase.sh)",
+      "Bash(python3:*)"
     ],
     "deny": []
   }
