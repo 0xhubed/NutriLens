@@ -266,7 +266,11 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   
   Widget _buildModernLoadingState(ColorScheme colorScheme) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.xl),
+      padding: const EdgeInsets.only(
+        left: AppSpacing.xl,
+        right: AppSpacing.xl,
+        bottom: AppSpacing.xl,
+      ),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: AppRadius.extraLarge,
