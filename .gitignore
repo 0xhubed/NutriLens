@@ -114,6 +114,7 @@ flutter_*.tar.xz
 
 # Project specific
 plans/
+deploy-to-firebase.sh
 
 # Markdown files (except README.md)
 *.md

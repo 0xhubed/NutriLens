@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/services/ai_provider.dart';
@@ -43,21 +44,29 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
   
   @override
   void dispose() {
+    _fadeController.removeStatusListener(() {});
     _fadeController.dispose();
     super.dispose();
   }
 
   Future<void> _loadProviderData() async {
-    final providerManager = ref.read(aiProviderManagerProvider);
-    await providerManager.initialize();
-    final status = await providerManager.getProviderStatus();
-    final costs = providerManager.estimateAllProviderCosts();
-    
-    if (mounted) {
-      setState(() {
-        _providerStatus = status;
-        _providerCosts = costs;
-      });
+    try {
+      final providerManager = ref.read(aiProviderManagerProvider);
+      await providerManager.initialize();
+      
+      if (!mounted) return;
+      
+      final status = await providerManager.getProviderStatus();
+      final costs = providerManager.estimateAllProviderCosts();
+      
+      if (mounted) {
+        setState(() {
+          _providerStatus = status;
+          _providerCosts = costs;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading provider data: $e');
     }
   }
 
@@ -153,7 +162,7 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
   }
   
   Widget _buildStatusOverview(ColorScheme colorScheme) {
-    final providerManager = ref.read(aiProviderManagerProvider);
+    final providerManager = ref.watch(aiProviderManagerProvider);
     final activeProvider = providerManager.activeProvider;
     final fallbackProvider = providerManager.fallbackProvider;
     
@@ -306,7 +315,7 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
   }
   
   Widget _buildProvidersList(ColorScheme colorScheme) {
-    final providerManager = ref.read(aiProviderManagerProvider);
+    final providerManager = ref.watch(aiProviderManagerProvider);
     
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -353,7 +362,7 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
   }
   
   Widget _buildModernProviderTile(AIProvider provider, ColorScheme colorScheme) {
-    final providerManager = ref.read(aiProviderManagerProvider);
+    final providerManager = ref.watch(aiProviderManagerProvider);
     final isActive = providerManager.activeProvider?.providerId == provider.providerId;
     final isFallback = providerManager.fallbackProvider?.providerId == provider.providerId;
     final isConfigured = _providerStatus[provider.providerId] ?? false;
@@ -910,6 +919,8 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
     final providerManager = ref.read(aiProviderManagerProvider);
     final colorScheme = Theme.of(context).colorScheme;
     
+    if (!mounted) return;
+    
     try {
       switch (action) {
         case 'configure':
@@ -917,8 +928,8 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
           break;
         case 'setActive':
           await providerManager.setActiveProvider(provider.providerId);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Row(
                   children: [
@@ -943,8 +954,8 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
           break;
         case 'setFallback':
           await providerManager.setFallbackProvider(provider.providerId);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Row(
                   children: [
@@ -971,10 +982,11 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
           _testProvider(provider);
           break;
       }
+      if (!mounted) return;
       await _loadProviderData();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
@@ -1071,10 +1083,11 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
                 for (var controller in controllers.values) {
                   controller.dispose();
                 }
+                
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Row(
                         children: [
