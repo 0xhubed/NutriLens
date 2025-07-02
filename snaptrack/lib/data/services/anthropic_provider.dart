@@ -45,8 +45,8 @@ class AnthropicProvider extends AIProvider implements TextAnalysisCapable {
   }
 
   @override
-  Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint}) async {
-    return analyzeImageWithPortions(imageFile, userHint: userHint, requestPortions: false);
+  Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint, double? estimatedVolume}) async {
+    return analyzeImageWithPortions(imageFile, userHint: userHint, requestPortions: false, estimatedVolume: estimatedVolume);
   }
 
   @override
@@ -54,6 +54,7 @@ class AnthropicProvider extends AIProvider implements TextAnalysisCapable {
     File imageFile, {
     String? userHint,
     bool requestPortions = true,
+    double? estimatedVolume,
   }) async {
     final apiKey = await getApiKey();
     
@@ -61,12 +62,12 @@ class AnthropicProvider extends AIProvider implements TextAnalysisCapable {
       if (apiKey == null || apiKey.isEmpty) {
         // Fall back to mock data if no API key is configured
         print('Anthropic: No API key configured, using mock data');
-        final mockData = _getMockAnalysis(userHint, requestPortions: requestPortions);
+        final mockData = _getMockAnalysis(userHint, requestPortions: requestPortions, estimatedVolume: estimatedVolume);
         return FoodAnalysis.fromJson(mockData);
       }
       
       // Make real API call to Anthropic Claude Vision
-      final analysisData = await _callAnthropicVision(imageFile, apiKey, userHint, requestPortions: requestPortions);
+      final analysisData = await _callAnthropicVision(imageFile, apiKey, userHint, requestPortions: requestPortions, estimatedVolume: estimatedVolume);
       return FoodAnalysis.fromJson(analysisData);
     } catch (e) {
       throw AIProviderException('Analysis failed: $e', provider: this, originalError: e);
@@ -86,7 +87,14 @@ class AnthropicProvider extends AIProvider implements TextAnalysisCapable {
     return apiKey != null && apiKey.isNotEmpty;
   }
 
-  Map<String, dynamic> _getMockAnalysis(String? userHint, {bool requestPortions = false}) {
+  Map<String, dynamic> _getMockAnalysis(String? userHint, {bool requestPortions = false, double? estimatedVolume}) {
+    // Adjust nutrition based on volume if provided
+    double volumeMultiplier = 1.0;
+    if (estimatedVolume != null) {
+      // Assume standard portion is 8 oz, adjust accordingly
+      volumeMultiplier = estimatedVolume / 8.0;
+    }
+    
     // Mock data for testing different hint scenarios
     if (userHint != null) {
       final lowerHint = userHint.toLowerCase();
@@ -95,10 +103,11 @@ class AnthropicProvider extends AIProvider implements TextAnalysisCapable {
       if (lowerHint.contains('without fruits') || lowerHint.contains('no fruits')) {
         return {
           'name': 'Plain Porridge',
-          'calories': 185,
-          'protein': 6.0,
-          'carbs': 32.0,
-          'fat': 3.5,
+          'calories': (185 * volumeMultiplier).round(),
+          'protein': (6.0 * volumeMultiplier),
+          'carbs': (32.0 * volumeMultiplier),
+          'fat': (3.5 * volumeMultiplier),
+          'measuredVolume': estimatedVolume,
           'detectedItems': [
             {
               'name': 'Oatmeal Porridge',
@@ -347,7 +356,7 @@ class AnthropicProvider extends AIProvider implements TextAnalysisCapable {
     };
   }
 
-  Future<Map<String, dynamic>> _callAnthropicVision(File imageFile, String apiKey, String? userHint, {bool requestPortions = false}) async {
+  Future<Map<String, dynamic>> _callAnthropicVision(File imageFile, String apiKey, String? userHint, {bool requestPortions = false, double? estimatedVolume}) async {
     try {
       // Convert image to base64
       final bytes = await imageFile.readAsBytes();
@@ -374,6 +383,7 @@ class AnthropicProvider extends AIProvider implements TextAnalysisCapable {
                   'text': '''
 Analyze this food image and provide detailed nutrition and categorization information.
 ${userHint != null ? '\nUser description: "$userHint"\nPlease use this information to help identify the food accurately.\n' : ''}
+${estimatedVolume != null ? '\nAR-measured volume: ${estimatedVolume.toStringAsFixed(1)} oz\nPlease use this volume measurement to provide more accurate portion sizes and nutrition estimates.\n' : ''}
 Return ONLY a valid JSON object with no additional text, markdown formatting, or explanation. The JSON should follow this exact structure:
 {
   "name": "Overall meal/food name",

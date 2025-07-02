@@ -36,6 +36,9 @@ dependencies:
   # UI Components
   cached_network_image: ^3.3.0
   
+  # AR Support
+  ar_flutter_plugin: ^0.7.3
+  
   # Charts & Analytics
   fl_chart: ^0.68.0
   

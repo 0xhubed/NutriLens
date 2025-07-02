@@ -28,11 +28,13 @@ import '../../data/models/metabolic_state.dart';
 class AnalysisScreen extends ConsumerStatefulWidget {
   final File imageFile;
   final DateTime? initialDateTime;
+  final double? estimatedVolume;
   
   const AnalysisScreen({
     super.key,
     required this.imageFile,
     this.initialDateTime,
+    this.estimatedVolume,
   });
 
   @override
@@ -252,13 +254,54 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: AppRadius.extraLarge,
-          child: Image.file(
-            widget.imageFile,
-            fit: BoxFit.cover,
-            width: double.infinity,
-          ),
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: AppRadius.extraLarge,
+              child: Image.file(
+                widget.imageFile,
+                fit: BoxFit.cover,
+                width: double.infinity,
+              ),
+            ),
+            if (widget.estimatedVolume != null)
+              Positioned(
+                top: AppSpacing.md,
+                right: AppSpacing.md,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: AppRadius.medium,
+                    border: Border.all(
+                      color: AppColors.primaryGreen.withOpacity(0.5),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.view_in_ar,
+                        color: AppColors.primaryGreen,
+                        size: 16,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Text(
+                        '${widget.estimatedVolume!.toStringAsFixed(1)} oz',
+                        style: AppTextStyles.labelMedium.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -1235,7 +1278,10 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
   
   void _startAnalysis() {
     // Use portion-aware analysis by default to get portion information from first call
-    ref.read(foodAnalysisProvider.notifier).analyzeImageWithPortions(widget.imageFile);
+    ref.read(foodAnalysisProvider.notifier).analyzeImageWithPortions(
+      widget.imageFile,
+      estimatedVolume: widget.estimatedVolume,
+    );
   }
   
   void _updateFormFields(FoodAnalysis result) {
@@ -1572,7 +1618,11 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
       _showAlternatives = false;
     });
     // Use portion-aware analysis when re-analyzing with hints to maintain portion data
-    ref.read(foodAnalysisProvider.notifier).analyzeImageWithPortions(widget.imageFile, hint: hint);
+    ref.read(foodAnalysisProvider.notifier).analyzeImageWithPortions(
+      widget.imageFile,
+      hint: hint,
+      estimatedVolume: widget.estimatedVolume,
+    );
   }
   
   void _showPartialCorrectionDialog(FoodAnalysis originalResult) {

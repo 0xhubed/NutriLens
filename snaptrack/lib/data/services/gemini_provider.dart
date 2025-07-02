@@ -44,8 +44,8 @@ class GeminiProvider extends AIProvider implements TextAnalysisCapable {
   }
 
   @override
-  Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint}) async {
-    return analyzeImageWithPortions(imageFile, userHint: userHint, requestPortions: false);
+  Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint, double? estimatedVolume}) async {
+    return analyzeImageWithPortions(imageFile, userHint: userHint, requestPortions: false, estimatedVolume: estimatedVolume);
   }
 
   @override
@@ -53,6 +53,7 @@ class GeminiProvider extends AIProvider implements TextAnalysisCapable {
     File imageFile, {
     String? userHint,
     bool requestPortions = true,
+    double? estimatedVolume,
   }) async {
     final apiKey = await getApiKey();
     

@@ -79,14 +79,15 @@ class AIProviderManager {
     }
   }
 
-  Future<FoodAnalysis> analyzeWithFallback(File imageFile, {String? userHint}) async {
-    return analyzeWithPortionsAndFallback(imageFile, userHint: userHint, requestPortions: true);
+  Future<FoodAnalysis> analyzeWithFallback(File imageFile, {String? userHint, double? estimatedVolume}) async {
+    return analyzeWithPortionsAndFallback(imageFile, userHint: userHint, requestPortions: true, estimatedVolume: estimatedVolume);
   }
 
   Future<FoodAnalysis> analyzeWithPortionsAndFallback(
     File imageFile, {
     String? userHint,
     bool requestPortions = true,
+    double? estimatedVolume,
   }) async {
     final active = activeProvider;
     if (active == null) {
@@ -100,6 +101,7 @@ class AIProviderManager {
           imageFile,
           userHint: userHint,
           requestPortions: requestPortions,
+          estimatedVolume: estimatedVolume,
         );
       } else {
         throw AIProviderException('Active provider not configured', provider: active);
@@ -114,6 +116,7 @@ class AIProviderManager {
               imageFile,
               userHint: userHint,
               requestPortions: requestPortions,
+              estimatedVolume: estimatedVolume,
             );
           }
         } catch (fallbackError) {

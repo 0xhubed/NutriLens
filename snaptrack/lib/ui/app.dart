@@ -7,7 +7,7 @@ import 'activity/activity_form_screen.dart';
 import 'activity/activity_logger_screen.dart';
 import 'activity/balance_dashboard_screen.dart';
 import 'analytics/analytics_screen.dart';
-import 'camera/camera_screen.dart';
+import 'camera/enhanced_camera_screen.dart';
 import 'history/history_screen.dart';
 import 'home/home_screen.dart';
 import 'settings/provider_settings_screen.dart';
@@ -27,7 +27,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/camera',
         name: 'camera',
-        builder: (context, state) => const CameraScreen(),
+        builder: (context, state) => const EnhancedCameraScreen(),
       ),
       GoRoute(
         path: '/history',

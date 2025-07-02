@@ -30,29 +30,29 @@ class FoodAnalysisNotifier extends StateNotifier<AsyncValue<FoodAnalysis?>> {
   
   FoodAnalysisNotifier(this._aiManager) : super(const AsyncValue.data(null));
   
-  Future<void> analyzeImage(File imageFile) async {
+  Future<void> analyzeImage(File imageFile, {double? estimatedVolume}) async {
     state = const AsyncValue.loading();
     
     try {
-      final result = await _aiManager.analyzeWithFallback(imageFile);
+      final result = await _aiManager.analyzeWithFallback(imageFile, estimatedVolume: estimatedVolume);
       state = AsyncValue.data(result);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
   }
   
-  Future<void> analyzeImageWithHint(File imageFile, String hint) async {
+  Future<void> analyzeImageWithHint(File imageFile, String hint, {double? estimatedVolume}) async {
     state = const AsyncValue.loading();
     
     try {
-      final result = await _aiManager.analyzeWithFallback(imageFile, userHint: hint);
+      final result = await _aiManager.analyzeWithFallback(imageFile, userHint: hint, estimatedVolume: estimatedVolume);
       state = AsyncValue.data(result);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
   }
 
-  Future<void> analyzeImageWithPortions(File imageFile, {String? hint}) async {
+  Future<void> analyzeImageWithPortions(File imageFile, {String? hint, double? estimatedVolume}) async {
     state = const AsyncValue.loading();
     
     try {
@@ -60,6 +60,7 @@ class FoodAnalysisNotifier extends StateNotifier<AsyncValue<FoodAnalysis?>> {
         imageFile, 
         userHint: hint, 
         requestPortions: true,
+        estimatedVolume: estimatedVolume,
       );
       state = AsyncValue.data(result);
     } catch (error, stackTrace) {

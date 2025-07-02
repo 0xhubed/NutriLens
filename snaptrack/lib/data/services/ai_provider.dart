@@ -3,13 +3,14 @@ import '../models/food_entry.dart';
 import '../models/measurement_unit.dart';
 
 abstract class AIProvider {
-  Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint});
+  Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint, double? estimatedVolume});
   
   // v1.4: Portion-based analysis
   Future<FoodAnalysis> analyzeImageWithPortions(
     File imageFile, {
     String? userHint,
     bool requestPortions = true,
+    double? estimatedVolume,
   });
   
   String get name;
@@ -38,6 +39,9 @@ class FoodAnalysis {
   // v1.4: Portion-based analysis support
   final List<FoodPortion>? detectedPortions;
   final bool hasPortionData;
+  
+  // v1.5: AR measurement support
+  final double? measuredVolume;
 
   FoodAnalysis({
     required this.name,
@@ -55,6 +59,7 @@ class FoodAnalysis {
     this.cookingMethod,
     this.detectedPortions,
     this.hasPortionData = false,
+    this.measuredVolume,
   });
 
   factory FoodAnalysis.fromJson(Map<String, dynamic> json) {
