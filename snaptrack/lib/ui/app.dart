@@ -8,6 +8,7 @@ import 'activity/activity_logger_screen.dart';
 import 'activity/balance_dashboard_screen.dart';
 import 'analytics/analytics_screen.dart';
 import 'camera/enhanced_camera_screen.dart';
+import 'camera/ar_camera_screen.dart';
 import 'history/history_screen.dart';
 import 'home/home_screen.dart';
 import 'settings/provider_settings_screen.dart';
@@ -28,6 +29,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/camera',
         name: 'camera',
         builder: (context, state) => const EnhancedCameraScreen(),
+      ),
+      GoRoute(
+        path: '/ar-camera',
+        name: 'arCamera',
+        builder: (context, state) => const ARCameraScreen(),
       ),
       GoRoute(
         path: '/history',
