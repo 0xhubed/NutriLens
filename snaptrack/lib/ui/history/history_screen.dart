@@ -547,9 +547,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         elevation: isSelected ? 8 : 2,
         color: isSelected ? Theme.of(context).colorScheme.primaryContainer : null,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
+            Flexible(
               flex: 3,
               child: Container(
                 width: double.infinity,
@@ -560,11 +561,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 child: _buildFoodImage(entry.imageBase64),
               ),
             ),
-            Expanded(
+            Flexible(
               flex: 2,
               child: Padding(
                 padding: const EdgeInsets.all(8),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(

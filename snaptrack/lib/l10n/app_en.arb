@@ -1,0 +1,188 @@
+{
+  "@@locale": "en",
+  "@@last_modified": "2024-01-01T00:00:00.000",
+  
+  "appTitle": "NutriLens",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  
+  "yes": "Yes",
+  "no": "No",
+  "ok": "OK",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "add": "Add",
+  "remove": "Remove",
+  "search": "Search",
+  "settings": "Settings",
+  "loading": "Loading...",
+  "error": "Error",
+  "success": "Success",
+  "close": "Close",
+  "next": "Next",
+  "back": "Back",
+  "done": "Done",
+  
+  "homeTab": "Home",
+  "analyticsTab": "Analytics",
+  "historyTab": "History",
+  "activityTab": "Activity",
+  "balanceTab": "Balance",
+  
+  "goodMorning": "Good Morning!",
+  "goodAfternoon": "Good Afternoon!",
+  "goodEvening": "Good Evening!",
+  "readyToTrack": "Ready to track your nutrition?",
+  "takePhoto": "Take Photo",
+  "takePhotoDescription": "Scan your meal instantly",
+  "typeFood": "Type Food",
+  "typeFoodDescription": "Describe your meal",
+  "addFood": "Add Food",
+  "addFoodDescription": "Choose how you'd like to track your meal",
+  "noMealsToday": "No meals logged today",
+  "noMealsCta": "Start tracking your nutrition by taking a photo or typing your meal",
+  "todaySummary": "Today's Summary",
+  "energyBalance": "Energy Balance",
+  "quickAccess": "Quick Access",
+  "viewAll": "View All",
+  "analytics": "Analytics",
+  "analyticsDescription": "View your trends",
+  "templates": "Templates",
+  "templatesDescription": "Saved meals",
+  
+  "calories": "Calories",
+  "protein": "Protein",
+  "carbs": "Carbs",
+  "fat": "Fat",
+  "kcal": "kcal",
+  "grams": "g",
+  "meals": "{count} meals",
+  "@meals": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "meal": "meal",
+  "macroDistribution": "Macro Distribution",
+  "dailyProgress": "Daily Progress",
+  "weeklyStats": "Weekly Stats",
+  "insights": "Insights",
+  "metabolicData": "Metabolic Data",
+  
+  "logActivity": "Log Activity",
+  "activityName": "Activity Name",
+  "duration": "Duration",
+  "intensity": "Intensity",
+  "caloriesBurned": "Calories Burned",
+  "minutes": "minutes",
+  "hours": "hours",
+  "intensityLight": "Light",
+  "intensityModerate": "Moderate",
+  "intensityVigorous": "Vigorous",
+  "cardio": "Cardio",
+  "strength": "Strength",
+  "sports": "Sports",
+  "flexibility": "Flexibility",
+  "water": "Water",
+  "other": "Other",
+  
+  "measurementUnits": "Measurement Units",
+  "grams_short": "g",
+  "kilograms_short": "kg",
+  "milliliters_short": "ml",
+  "deciliters_short": "dl",
+  "liters_short": "l",
+  "tablespoon_short": "tbsp",
+  "teaspoon_short": "tsp",
+  "cup_short": "cup",
+  "piece": "piece",
+  "slice": "slice",
+  "portion": "portion",
+  "handful": "handful",
+  "scoop": "scoop",
+  
+  "proteins": "Proteins",
+  "carbohydrates": "Carbohydrates",
+  "fats": "Fats",
+  "vegetables": "Vegetables",
+  "fruits": "Fruits",
+  "dairy": "Dairy",
+  "grains": "Grains",
+  "nuts": "Nuts",
+  "seeds": "Seeds",
+  "beverages": "Beverages",
+  
+  "justNow": "Just now",
+  "minutesAgo": "{count}m ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{count}h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{count}d ago",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "thisWeek": "This Week",
+  "lastWeek": "Last Week",
+  "selectWeek": "Select Week",
+  "selectDate": "Select Date",
+  
+  "overview": "Overview",
+  "trends": "Trends",
+  "comparison": "Comparison",
+  "exportData": "Export Data",
+  "setGoals": "Set Goals",
+  "caloriesTrend": "Calories Trend",
+  "macroTrends": "Macro Trends",
+  "weeklyAverage": "Weekly Average",
+  "dailyAverage": "Daily Average",
+  
+  "exportOptions": "Export Options",
+  "exportCsv": "Export as CSV",
+  "exportJson": "Export as JSON",
+  "exportPdf": "Export as PDF",
+  "shareData": "Share Data",
+  
+  "errorLoadingData": "Error loading data",
+  "errorSavingData": "Error saving data",
+  "errorNetworkConnection": "Network connection error",
+  "errorUnknown": "An unknown error occurred",
+  "retryAction": "Retry",
+  "contactSupport": "Contact Support",
+  
+  "dailyCalorieGoal": "Daily Calorie Goal",
+  "proteinGoal": "Protein Goal",
+  "carbsGoal": "Carbs Goal",
+  "fatGoal": "Fat Goal",
+  "goalAchieved": "Goal Achieved!",
+  "goalProgress": "Goal Progress",
+  
+  "recalculateTotals": "Recalculate totals",
+  "moreOptions": "More options",
+  "editItem": "Edit item",
+  "deleteItem": "Delete item",
+  "addItem": "Add item",
+  "viewDetails": "View details"
+}

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/responsive_helper.dart';
 import '../../data/models/activity_entry.dart';
 import '../../data/providers/activity_providers.dart';
 import '../../data/services/activity_service.dart';
@@ -42,7 +43,7 @@ class _ActivityLoggerScreenState extends ConsumerState<ActivityLoggerScreen> {
         slivers: [
           _buildAppBar(context, colorScheme),
           SliverPadding(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: EdgeInsets.all(ResponsiveHelper.adaptivePadding(context)),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 _buildSearchBar(colorScheme),
@@ -148,6 +149,7 @@ class _ActivityLoggerScreenState extends ConsumerState<ActivityLoggerScreen> {
     final recentActivities = ref.watch(recentActivitiesProvider);
     
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -277,6 +279,7 @@ class _ActivityLoggerScreenState extends ConsumerState<ActivityLoggerScreen> {
     final selectedCategory = ref.watch(selectedActivityCategoryProvider);
     
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -375,6 +378,7 @@ class _ActivityLoggerScreenState extends ConsumerState<ActivityLoggerScreen> {
     final activities = ref.watch(filteredActivitiesByCategoryProvider);
     
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(

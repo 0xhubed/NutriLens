@@ -11,7 +11,7 @@ class MealTemplateService {
   /// Save a meal template
   Future<void> saveTemplate(MealTemplate template) async {
     // Generate ID if not present
-    template.id ??= DateTime.now().millisecondsSinceEpoch;
+    template.id ??= DateTime.now().millisecondsSinceEpoch.toString();
     await _templateBox.put(template.id, template);
   }
 
@@ -138,7 +138,9 @@ class MealTemplateService {
     int? servings,
     DateTime? timestamp,
   }) async {
-    await markAsUsed(template.id);
+    if (template.id != null) {
+      await markAsUsed(int.parse(template.id!));
+    }
     
     final targetServings = servings ?? template.servings;
     final entry = FoodEntry()
@@ -201,7 +203,7 @@ class MealTemplateService {
     
     for (int i = 0; i < templates.length; i++) {
       final template = templates[i];
-      template.id ??= i + 1000; // Start with higher IDs for predefined
+      template.id ??= (i + 1000).toString(); // Start with higher IDs for predefined
       await _templateBox.put(template.id, template);
     }
   }
@@ -391,7 +393,7 @@ class MealTemplateService {
         cookTimeMinutes: 25,
         mealType: MealType.dinner,
         foodGroups: [FoodGroup.proteins, FoodGroup.vegetables],
-        dietaryTags: [DietaryTag.highProtein, DietaryTag.paleo],
+        dietaryTags: [DietaryTag.highProtein, DietaryTag.glutenFree],
         tags: ['salmon', 'baked', 'omega3', 'dinner'],
       ),
     ];

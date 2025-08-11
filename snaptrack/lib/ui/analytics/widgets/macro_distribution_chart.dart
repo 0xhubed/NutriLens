@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 
+import '../../../core/utils/responsive_helper.dart' hide ResponsiveText;
 import '../../../data/services/analytics_service.dart';
 import '../../../data/models/macro_profile.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../widgets/responsive_text.dart';
 
 class MacroDistributionChart extends ConsumerStatefulWidget {
   final DateTime weekStart;
@@ -28,7 +30,7 @@ class _MacroDistributionChartState extends ConsumerState<MacroDistributionChart>
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(ResponsiveHelper.adaptivePadding(context)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -39,9 +41,10 @@ class _MacroDistributionChartState extends ConsumerState<MacroDistributionChart>
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(width: 8),
-                Text(
+                ResponsiveText(
                   'Macro Distribution',
                   style: Theme.of(context).textTheme.titleLarge,
+                  baseFontSize: 18,
                 ),
                 const Spacer(),
                 _buildComparisonToggle(),
@@ -267,6 +270,7 @@ class _MacroDistributionChartState extends ConsumerState<MacroDistributionChart>
     final userFatPercentage = (fatCalories / totalMacroCalories * 100);
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         // Comparison charts side by side
         Expanded(
@@ -275,6 +279,7 @@ class _MacroDistributionChartState extends ConsumerState<MacroDistributionChart>
               // User's actual distribution
               Expanded(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'Your Average',
@@ -331,6 +336,7 @@ class _MacroDistributionChartState extends ConsumerState<MacroDistributionChart>
               // Optimal distribution
               Expanded(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'Optimal (${profile.name})',

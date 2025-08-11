@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/utils/responsive_helper.dart';
 import '../../data/models/food_entry.dart';
 import '../../data/services/analytics_service.dart';
 import '../../data/services/export_service.dart';
@@ -48,12 +49,25 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = ResponsiveHelper.shouldUseCompactLayout(context);
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Analytics'),
+        title: Text(
+          'Analytics',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.adaptiveFontSize(context, base: 20),
+          ),
+        ),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
+          isScrollable: isCompact,
+          tabs: isCompact ? const [
+            Tab(icon: Icon(Icons.dashboard, size: 20)),
+            Tab(icon: Icon(Icons.trending_up, size: 20)),
+            Tab(icon: Icon(Icons.lightbulb, size: 20)),
+            Tab(icon: Icon(Icons.timeline, size: 20)),
+          ] : const [
             Tab(text: 'Overview', icon: Icon(Icons.dashboard)),
             Tab(text: 'Trends', icon: Icon(Icons.trending_up)),
             Tab(text: 'Insights', icon: Icon(Icons.lightbulb)),
@@ -120,30 +134,33 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
         ref.invalidate(weeklyStatsProvider(_weekStart));
         ref.invalidate(dailyProgressProvider(null));
       },
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Week selector
-            _buildWeekSelector(),
-            const SizedBox(height: 16),
-            
-            // Daily progress for today
-            const DailyProgressCard(),
-            const SizedBox(height: 16),
-            
-            // Daily macro distribution
-            const DailyMacroSummary(),
-            const SizedBox(height: 16),
-            
-            // Weekly stats
-            WeeklyStatsCard(weekStart: _weekStart),
-            const SizedBox(height: 16),
-            
-            // Quick insights
-            const InsightsCard(maxInsights: 3),
-          ],
+      child: ResponsiveHelper.buildResponsiveContainer(
+        context: context,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Week selector
+              _buildWeekSelector(),
+              const SizedBox(height: 16),
+              
+              // Daily progress for today
+              const DailyProgressCard(),
+              const SizedBox(height: 16),
+              
+              // Daily macro distribution
+              const DailyMacroSummary(),
+              const SizedBox(height: 16),
+              
+              // Weekly stats
+              WeeklyStatsCard(weekStart: _weekStart),
+              const SizedBox(height: 16),
+              
+              // Quick insights
+              const InsightsCard(maxInsights: 3),
+            ],
+          ),
         ),
       ),
     );
@@ -157,6 +174,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Week selector
@@ -184,6 +202,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
       child: const SingleChildScrollView(
         padding: EdgeInsets.all(16),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             InsightsCard(maxInsights: null), // Show all insights
           ],
@@ -282,6 +301,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Section header
@@ -574,7 +594,7 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(
+                  Flexible(
                     child: OutlinedButton(
                       onPressed: () => _selectDate(true),
                       child: Text(_startDate != null
@@ -585,7 +605,7 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
                   const SizedBox(width: 8),
                   const Text('to'),
                   const SizedBox(width: 8),
-                  Expanded(
+                  Flexible(
                     child: OutlinedButton(
                       onPressed: () => _selectDate(false),
                       child: Text(_endDate != null

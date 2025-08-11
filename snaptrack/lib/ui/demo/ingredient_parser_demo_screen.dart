@@ -315,7 +315,7 @@ class _IngredientParserDemoScreenState extends ConsumerState<IngredientParserDem
                     ),
                     subtitle: Text(
                       '${portion.formattedQuantity} (~${portion.effectiveGrams.toStringAsFixed(0)}g)',
-                      style: AppTextStyles.bodySmall,
+                      style: AppTextStyles.labelMedium,
                     ),
                     trailing: IconButton(
                       onPressed: () => _removePortion(index),

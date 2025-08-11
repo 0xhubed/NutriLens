@@ -22,6 +22,7 @@ class DailyProgressCard extends ConsumerWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -68,6 +69,7 @@ class DailyProgressCard extends ConsumerWidget {
 
   Widget _buildProgressContent(BuildContext context, DailyProgress progress) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         // Calories progress
         _buildProgressItem(
@@ -222,6 +224,7 @@ class DailyProgressCard extends ConsumerWidget {
     Color color,
   ) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           label,

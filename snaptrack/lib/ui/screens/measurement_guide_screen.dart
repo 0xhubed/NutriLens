@@ -22,7 +22,7 @@ class MeasurementGuideScreen extends ConsumerStatefulWidget {
 }
 
 class _MeasurementGuideScreenState extends ConsumerState<MeasurementGuideScreen>
-    with TickerProviderStateMixin, SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _searchController = TextEditingController();
   

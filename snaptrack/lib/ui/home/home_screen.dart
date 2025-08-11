@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'dart:math' as math;
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/responsive_helper.dart';
 import '../../data/models/daily_nutrition.dart';
 import '../../data/providers/activity_providers.dart';
 import '../../data/providers/nutrition_providers.dart';
@@ -24,7 +25,7 @@ class HomeScreen extends ConsumerWidget {
         slivers: [
           _buildModernAppBar(context, colorScheme),
           SliverPadding(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: EdgeInsets.all(ResponsiveHelper.adaptivePadding(context)),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 _buildWelcomeSection(context),
@@ -47,23 +48,27 @@ class HomeScreen extends ConsumerWidget {
   }
   
   Widget _buildModernAppBar(BuildContext context, ColorScheme colorScheme) {
+    final isCompact = ResponsiveHelper.shouldUseCompactLayout(context);
+    final isMobile = ResponsiveHelper.isMobile(context);
+    
     return SliverAppBar(
-      expandedHeight: 120,
+      expandedHeight: ResponsiveHelper.getAppBarHeight(context),
       floating: true,
       snap: true,
       backgroundColor: colorScheme.surface,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.only(
-          left: AppSpacing.md,
-          bottom: AppSpacing.md,
+        titlePadding: EdgeInsets.only(
+          left: ResponsiveHelper.adaptivePadding(context),
+          bottom: ResponsiveHelper.adaptivePadding(context),
         ),
         title: Text(
           'NutriLens',
           style: AppTextStyles.headlineLarge.copyWith(
             color: colorScheme.onSurface,
             fontWeight: FontWeight.w800,
+            fontSize: ResponsiveHelper.adaptiveFontSize(context, base: 24),
           ),
         ),
         background: Container(
@@ -79,7 +84,38 @@ class HomeScreen extends ConsumerWidget {
           ),
         ),
       ),
-      actions: [
+      actions: isCompact ? [
+        PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
+          onSelected: (value) {
+            switch (value) {
+              case 'balance':
+                context.push('/balance');
+                break;
+              case 'activity':
+                context.push('/activity');
+                break;
+              case 'analytics':
+                context.push('/analytics');
+                break;
+              case 'history':
+                context.push('/history');
+                break;
+              case 'settings':
+                context.push('/settings');
+                break;
+            }
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(value: 'balance', child: Row(children: [Icon(Icons.balance_rounded, size: 20), SizedBox(width: 8), Text('Balance')])),
+            PopupMenuItem(value: 'activity', child: Row(children: [Icon(Icons.fitness_center_outlined, size: 20), SizedBox(width: 8), Text('Activity')])),
+            PopupMenuItem(value: 'analytics', child: Row(children: [Icon(Icons.analytics_outlined, size: 20), SizedBox(width: 8), Text('Analytics')])),
+            PopupMenuItem(value: 'history', child: Row(children: [Icon(Icons.history_outlined, size: 20), SizedBox(width: 8), Text('History')])),
+            PopupMenuItem(value: 'settings', child: Row(children: [Icon(Icons.settings_outlined, size: 20), SizedBox(width: 8), Text('Settings')])),
+          ],
+        ),
+        const SizedBox(width: AppSpacing.sm),
+      ] : [
         _buildAppBarAction(
           context,
           Icons.balance_rounded,
@@ -178,6 +214,32 @@ class HomeScreen extends ConsumerWidget {
   }
   
   Widget _buildQuickActions(BuildContext context, ColorScheme colorScheme) {
+    final isCompact = ResponsiveHelper.shouldUseCompactLayout(context);
+    
+    if (isCompact) {
+      return Column(
+        children: [
+          _buildActionCard(
+            context,
+            'Take Photo',
+            'Scan your meal instantly',
+            Icons.camera_alt_rounded,
+            colorScheme.primary,
+            () => context.push('/camera'),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _buildActionCard(
+            context,
+            'Type Food',
+            'Describe your meal',
+            Icons.edit_rounded,
+            colorScheme.secondary,
+            () => context.push('/text-entry'),
+          ),
+        ],
+      );
+    }
+    
     return Row(
       children: [
         Expanded(
@@ -229,6 +291,7 @@ class HomeScreen extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
@@ -244,18 +307,28 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              Text(
-                title,
-                style: AppTextStyles.titleLarge.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w600,
+              Flexible(
+                child: Text(
+                  title,
+                  style: AppTextStyles.titleLarge.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                    fontSize: ResponsiveHelper.adaptiveFontSize(context, base: 18),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),
-              Text(
-                subtitle,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+              Flexible(
+                child: Text(
+                  subtitle,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: ResponsiveHelper.adaptiveFontSize(context, base: 14),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -484,6 +557,7 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -515,35 +589,57 @@ class HomeScreen extends ConsumerWidget {
   }
   
   Widget _buildMacronutrientCards(DailyNutrition nutrition, ColorScheme colorScheme) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = ResponsiveHelper.shouldUseCompactLayout(context);
+    
+    final cards = [
+      _buildMacroCard(
+        'Protein',
+        '${nutrition.totalProtein.toStringAsFixed(1)}g',
+        AppColors.proteinPurple,
+        Icons.fitness_center_rounded,
+      ),
+      _buildMacroCard(
+        'Carbs',
+        '${nutrition.totalCarbs.toStringAsFixed(1)}g',
+        AppColors.carbsBlue,
+        Icons.grain_rounded,
+      ),
+      _buildMacroCard(
+        'Fat',
+        '${nutrition.totalFat.toStringAsFixed(1)}g',
+        AppColors.fatsYellow,
+        Icons.water_drop_rounded,
+      ),
+    ];
+    
+    if (isCompact) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: cards.map((card) => Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          child: card,
+        )).toList(),
+      );
+    }
+    
     return Row(
       children: [
         Expanded(
-          child: _buildMacroCard(
-            'Protein',
-            '${nutrition.totalProtein.toStringAsFixed(1)}g',
-            AppColors.proteinPurple,
-            Icons.fitness_center_rounded,
-          ),
+          child: cards[0],
         ),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
-          child: _buildMacroCard(
-            'Carbs',
-            '${nutrition.totalCarbs.toStringAsFixed(1)}g',
-            AppColors.carbsBlue,
-            Icons.grain_rounded,
-          ),
+          child: cards[1],
         ),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
-          child: _buildMacroCard(
-            'Fat',
-            '${nutrition.totalFat.toStringAsFixed(1)}g',
-            AppColors.fatsYellow,
-            Icons.water_drop_rounded,
-          ),
+          child: cards[2],
         ),
       ],
+    );
+      },
     );
   }
   
@@ -684,6 +780,7 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -705,6 +802,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               _buildBalanceStatItem(
@@ -858,6 +956,7 @@ class HomeScreen extends ConsumerWidget {
           borderRadius: AppRadius.medium,
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(

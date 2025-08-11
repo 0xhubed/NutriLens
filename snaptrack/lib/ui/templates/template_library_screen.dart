@@ -184,6 +184,7 @@ class _TemplateLibraryScreenState extends ConsumerState<TemplateLibraryScreen>
       child: InkWell(
         onTap: () => _showTemplateDetails(template),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Template image or placeholder
@@ -213,6 +214,7 @@ class _TemplateLibraryScreenState extends ConsumerState<TemplateLibraryScreen>
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
