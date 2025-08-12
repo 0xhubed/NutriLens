@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
+import '../../../generated/l10n/app_localizations.dart';
 import '../../../data/services/analytics_service.dart';
 
 class CaloriesTrendChart extends ConsumerStatefulWidget {
@@ -38,14 +39,14 @@ class _CaloriesTrendChartState extends ConsumerState<CaloriesTrendChart> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Calories Trend',
+                  AppLocalizations.of(context)!.caloriesTrend,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const Spacer(),
                 if (_selectedDayIndex != null)
                   TextButton(
                     onPressed: () => setState(() => _selectedDayIndex = null),
-                    child: const Text('Clear Selection'),
+                    child: Text(AppLocalizations.of(context)!.clearSelection),
                   ),
               ],
             ),

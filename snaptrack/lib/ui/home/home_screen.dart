@@ -5,6 +5,7 @@ import 'dart:math' as math;
 
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/responsive_helper.dart';
+import '../../core/utils/localization_extension.dart';
 import '../../data/models/daily_nutrition.dart';
 import '../../data/providers/activity_providers.dart';
 import '../../data/providers/nutrition_providers.dart';
@@ -32,7 +33,7 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 _buildQuickActions(context, colorScheme),
                 const SizedBox(height: AppSpacing.lg),
-                _buildDailySummaryCard(todayNutrition, colorScheme),
+                _buildDailySummaryCard(context, todayNutrition, colorScheme),
                 const SizedBox(height: AppSpacing.lg),
                 _buildBalancePreview(context, ref, colorScheme),
                 const SizedBox(height: AppSpacing.lg),
@@ -64,7 +65,7 @@ class HomeScreen extends ConsumerWidget {
           bottom: ResponsiveHelper.adaptivePadding(context),
         ),
         title: Text(
-          'NutriLens',
+          context.l10n.appTitle,
           style: AppTextStyles.headlineLarge.copyWith(
             color: colorScheme.onSurface,
             fontWeight: FontWeight.w800,
@@ -107,11 +108,11 @@ class HomeScreen extends ConsumerWidget {
             }
           },
           itemBuilder: (context) => [
-            PopupMenuItem(value: 'balance', child: Row(children: [Icon(Icons.balance_rounded, size: 20), SizedBox(width: 8), Text('Balance')])),
-            PopupMenuItem(value: 'activity', child: Row(children: [Icon(Icons.fitness_center_outlined, size: 20), SizedBox(width: 8), Text('Activity')])),
-            PopupMenuItem(value: 'analytics', child: Row(children: [Icon(Icons.analytics_outlined, size: 20), SizedBox(width: 8), Text('Analytics')])),
-            PopupMenuItem(value: 'history', child: Row(children: [Icon(Icons.history_outlined, size: 20), SizedBox(width: 8), Text('History')])),
-            PopupMenuItem(value: 'settings', child: Row(children: [Icon(Icons.settings_outlined, size: 20), SizedBox(width: 8), Text('Settings')])),
+            PopupMenuItem(value: 'balance', child: Row(children: [Icon(Icons.balance_rounded, size: 20), SizedBox(width: 8), Text(context.l10n.balanceTab)])),
+            PopupMenuItem(value: 'activity', child: Row(children: [Icon(Icons.fitness_center_outlined, size: 20), SizedBox(width: 8), Text(context.l10n.activityTab)])),
+            PopupMenuItem(value: 'analytics', child: Row(children: [Icon(Icons.analytics_outlined, size: 20), SizedBox(width: 8), Text(context.l10n.analyticsTab)])),
+            PopupMenuItem(value: 'history', child: Row(children: [Icon(Icons.history_outlined, size: 20), SizedBox(width: 8), Text(context.l10n.historyTab)])),
+            PopupMenuItem(value: 'settings', child: Row(children: [Icon(Icons.settings_outlined, size: 20), SizedBox(width: 8), Text(context.l10n.settings)])),
           ],
         ),
         const SizedBox(width: AppSpacing.sm),
@@ -119,35 +120,35 @@ class HomeScreen extends ConsumerWidget {
         _buildAppBarAction(
           context,
           Icons.balance_rounded,
-          'Balance',
+          context.l10n.balanceTab,
           () => context.push('/balance'),
           colorScheme,
         ),
         _buildAppBarAction(
           context,
           Icons.fitness_center_outlined,
-          'Activity',
+          context.l10n.activityTab,
           () => context.push('/activity'),
           colorScheme,
         ),
         _buildAppBarAction(
           context,
           Icons.analytics_outlined,
-          'Analytics',
+          context.l10n.analyticsTab,
           () => context.push('/analytics'),
           colorScheme,
         ),
         _buildAppBarAction(
           context,
           Icons.history_outlined,
-          'History',
+          context.l10n.historyTab,
           () => context.push('/history'),
           colorScheme,
         ),
         _buildAppBarAction(
           context,
           Icons.settings_outlined,
-          'Settings',
+          context.l10n.settings,
           () => context.push('/settings'),
           colorScheme,
         ),
@@ -186,11 +187,11 @@ class HomeScreen extends ConsumerWidget {
     String greeting;
     
     if (hour < 12) {
-      greeting = 'Good Morning!';
+      greeting = context.l10n.goodMorning;
     } else if (hour < 17) {
-      greeting = 'Good Afternoon!';
+      greeting = context.l10n.goodAfternoon;
     } else {
-      greeting = 'Good Evening!';
+      greeting = context.l10n.goodEvening;
     }
     
     return Column(
@@ -204,7 +205,7 @@ class HomeScreen extends ConsumerWidget {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Ready to track your nutrition?',
+          context.l10n.readyToTrack,
           style: AppTextStyles.bodyLarge.copyWith(
             color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
           ),
@@ -221,8 +222,8 @@ class HomeScreen extends ConsumerWidget {
         children: [
           _buildActionCard(
             context,
-            'Take Photo',
-            'Scan your meal instantly',
+            context.l10n.takePhoto,
+            context.l10n.takePhotoDescription,
             Icons.camera_alt_rounded,
             colorScheme.primary,
             () => context.push('/camera'),
@@ -230,8 +231,8 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.md),
           _buildActionCard(
             context,
-            'Type Food',
-            'Describe your meal',
+            context.l10n.typeFood,
+            context.l10n.typeFoodDescription,
             Icons.edit_rounded,
             colorScheme.secondary,
             () => context.push('/text-entry'),
@@ -245,8 +246,8 @@ class HomeScreen extends ConsumerWidget {
         Expanded(
           child: _buildActionCard(
             context,
-            'Take Photo',
-            'Scan your meal instantly',
+            context.l10n.takePhoto,
+            context.l10n.takePhotoDescription,
             Icons.camera_alt_rounded,
             colorScheme.primary,
             () => context.push('/camera'),
@@ -256,8 +257,8 @@ class HomeScreen extends ConsumerWidget {
         Expanded(
           child: _buildActionCard(
             context,
-            'Type Food',
-            'Describe your meal',
+            context.l10n.typeFood,
+            context.l10n.typeFoodDescription,
             Icons.edit_rounded,
             colorScheme.secondary,
             () => context.push('/text-entry'),
@@ -338,7 +339,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDailySummaryCard(AsyncValue<DailyNutrition?> nutritionAsync, ColorScheme colorScheme) {
+  Widget _buildDailySummaryCard(BuildContext context, AsyncValue<DailyNutrition?> nutritionAsync, ColorScheme colorScheme) {
     return Card(
       elevation: 0,
       color: colorScheme.surface,
@@ -352,9 +353,9 @@ class HomeScreen extends ConsumerWidget {
       child: nutritionAsync.when(
         data: (nutrition) {
           if (nutrition == null) {
-            return _buildEmptyState(colorScheme);
+            return _buildEmptyState(context, colorScheme);
           }
-          return _buildNutritionSummary(nutrition, colorScheme);
+          return _buildNutritionSummary(context, nutrition, colorScheme);
         },
         loading: () => Container(
           height: 200,
@@ -367,7 +368,7 @@ class HomeScreen extends ConsumerWidget {
         error: (error, stack) => Container(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Text(
-            'Error loading nutrition data',
+            context.l10n.errorLoadingNutrition,
             style: AppTextStyles.bodyMedium.copyWith(
               color: colorScheme.error,
             ),
@@ -377,7 +378,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
   
-  Widget _buildEmptyState(ColorScheme colorScheme) {
+  Widget _buildEmptyState(BuildContext context, ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
@@ -396,14 +397,14 @@ class HomeScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'No meals logged today',
+            context.l10n.noMealsLogged,
             style: AppTextStyles.headlineMedium.copyWith(
               color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Start tracking your nutrition by taking a photo or typing your meal',
+            context.l10n.startTrackingMeal,
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyMedium.copyWith(
               color: colorScheme.onSurfaceVariant,
@@ -414,12 +415,12 @@ class HomeScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildEmptyStateAction(
-                'Take Photo',
+                context.l10n.takePhoto,
                 Icons.camera_alt_rounded,
                 colorScheme.primary,
               ),
               _buildEmptyStateAction(
-                'Type Food',
+                context.l10n.typeFood,
                 Icons.edit_rounded,
                 colorScheme.secondary,
               ),
@@ -456,7 +457,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
   
-  Widget _buildNutritionSummary(DailyNutrition nutrition, ColorScheme colorScheme) {
+  Widget _buildNutritionSummary(BuildContext context, DailyNutrition nutrition, ColorScheme colorScheme) {
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
@@ -466,7 +467,7 @@ class HomeScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Today\'s Summary',
+                context.l10n.todaysSummary,
                 style: AppTextStyles.headlineMedium.copyWith(
                   color: colorScheme.onSurface,
                 ),
@@ -483,7 +484,7 @@ class HomeScreen extends ConsumerWidget {
                       borderRadius: AppRadius.extraLarge,
                     ),
                     child: Text(
-                      '${nutrition.mealCount} meals',
+                      context.l10n.meals(nutrition.mealCount),
                       style: AppTextStyles.labelMedium.copyWith(
                         color: colorScheme.primary,
                         fontWeight: FontWeight.w500,
@@ -498,10 +499,10 @@ class HomeScreen extends ConsumerWidget {
                         onPressed: () async {
                           await ref.read(databaseServiceProvider).recalculateDailyNutrition(DateTime.now());
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Recalculating nutrition totals...')),
+                            SnackBar(content: Text(context.l10n.recalculatingTotals)),
                           );
                         },
-                        tooltip: 'Recalculate totals',
+                        tooltip: context.l10n.recalculateTotals,
                         padding: EdgeInsets.all(AppSpacing.xs),
                         constraints: BoxConstraints(),
                         iconSize: 20,
@@ -514,7 +515,7 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          _buildCaloriesCard(nutrition, colorScheme),
+          _buildCaloriesCard(context, nutrition, colorScheme),
           const SizedBox(height: AppSpacing.md),
           _buildMacronutrientCards(nutrition, colorScheme),
         ],
@@ -522,7 +523,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
   
-  Widget _buildCaloriesCard(DailyNutrition nutrition, ColorScheme colorScheme) {
+  Widget _buildCaloriesCard(BuildContext context, DailyNutrition nutrition, ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -561,7 +562,7 @@ class HomeScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Calories',
+                  context.l10n.calories,
                   style: AppTextStyles.labelLarge.copyWith(
                     color: AppColors.secondaryOrange,
                   ),
@@ -578,7 +579,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           Text(
-            'kcal',
+            context.l10n.kcal,
             style: AppTextStyles.titleLarge.copyWith(
               color: AppColors.secondaryOrange.withOpacity(0.7),
             ),
@@ -595,20 +596,20 @@ class HomeScreen extends ConsumerWidget {
     
     final cards = [
       _buildMacroCard(
-        'Protein',
-        '${nutrition.totalProtein.toStringAsFixed(1)}g',
+        context.l10n.protein,
+        '${nutrition.totalProtein.toStringAsFixed(1)}${context.l10n.grams}',
         AppColors.proteinPurple,
         Icons.fitness_center_rounded,
       ),
       _buildMacroCard(
-        'Carbs',
-        '${nutrition.totalCarbs.toStringAsFixed(1)}g',
+        context.l10n.carbs,
+        '${nutrition.totalCarbs.toStringAsFixed(1)}${context.l10n.grams}',
         AppColors.carbsBlue,
         Icons.grain_rounded,
       ),
       _buildMacroCard(
-        'Fat',
-        '${nutrition.totalFat.toStringAsFixed(1)}g',
+        context.l10n.fat,
+        '${nutrition.totalFat.toStringAsFixed(1)}${context.l10n.grams}',
         AppColors.fatsYellow,
         Icons.water_drop_rounded,
       ),
@@ -706,7 +707,7 @@ class HomeScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Energy Balance',
+                    context.l10n.energyBalance,
                     style: AppTextStyles.headlineMedium.copyWith(
                       color: colorScheme.onSurface,
                     ),
@@ -720,9 +721,9 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.md),
               balanceAsync.when(
-                data: (balance) => _buildBalanceContent(balance, colorScheme),
+                data: (balance) => _buildBalanceContent(context, balance, colorScheme),
                 loading: () => _buildBalanceLoading(colorScheme),
-                error: (_, __) => _buildBalanceError(colorScheme),
+                error: (_, __) => _buildBalanceError(context, colorScheme),
               ),
             ],
           ),
@@ -731,7 +732,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBalanceContent(CalorieBalance balance, ColorScheme colorScheme) {
+  Widget _buildBalanceContent(BuildContext context, CalorieBalance balance, ColorScheme colorScheme) {
     final isDeficit = balance.isDeficit;
     final isBalanced = balance.isBalanced;
     final color = isBalanced
@@ -806,13 +807,13 @@ class HomeScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               _buildBalanceStatItem(
-                'Food',
+                context.l10n.food,
                 '+${balance.foodIntake.toStringAsFixed(0)}',
                 AppColors.primaryGreen,
               ),
               const SizedBox(height: AppSpacing.xs),
               _buildBalanceStatItem(
-                'Activity',
+                context.l10n.activityTab,
                 '-${balance.activityBurn.toStringAsFixed(0)}',
                 AppColors.proteinPurple,
               ),
@@ -855,13 +856,13 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBalanceError(ColorScheme colorScheme) {
+  Widget _buildBalanceError(BuildContext context, ColorScheme colorScheme) {
     return Container(
       height: 80,
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Center(
         child: Text(
-          'Unable to load balance data',
+          context.l10n.unableToLoadBalance,
           style: AppTextStyles.bodyMedium.copyWith(
             color: colorScheme.error,
           ),
@@ -890,7 +891,7 @@ class HomeScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Quick Access',
+                  context.l10n.quickAccess,
                   style: AppTextStyles.headlineMedium.copyWith(
                     color: colorScheme.onSurface,
                   ),
@@ -898,7 +899,7 @@ class HomeScreen extends ConsumerWidget {
                 TextButton(
                   onPressed: () => context.push('/history'),
                   child: Text(
-                    'View All',
+                    context.l10n.viewAll,
                     style: AppTextStyles.labelLarge.copyWith(
                       color: colorScheme.primary,
                     ),
@@ -912,8 +913,8 @@ class HomeScreen extends ConsumerWidget {
                 Expanded(
                   child: _buildQuickAccessCard(
                     context,
-                    'Analytics',
-                    'View your trends',
+                    context.l10n.analytics,
+                    context.l10n.analyticsDescription,
                     Icons.analytics_outlined,
                     colorScheme.tertiary,
                     () => context.push('/analytics'),
@@ -923,8 +924,8 @@ class HomeScreen extends ConsumerWidget {
                 Expanded(
                   child: _buildQuickAccessCard(
                     context,
-                    'Templates',
-                    'Saved meals',
+                    context.l10n.templates,
+                    context.l10n.templatesDescription,
                     Icons.library_books_outlined,
                     colorScheme.primary,
                     () => context.push('/templates'),
@@ -992,7 +993,7 @@ class HomeScreen extends ConsumerWidget {
       foregroundColor: colorScheme.onPrimary,
       elevation: 4,
       icon: const Icon(Icons.add_rounded),
-      label: const Text('Add Food'),
+      label: Text(context.l10n.addFood),
       shape: RoundedRectangleBorder(
         borderRadius: AppRadius.extraLarge,
       ),
@@ -1033,14 +1034,14 @@ class HomeScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'Add Food',
+              context.l10n.addFood,
               style: AppTextStyles.headlineMedium.copyWith(
                 color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Choose how you\'d like to track your meal',
+              context.l10n.addFoodDescription,
               style: AppTextStyles.bodyMedium.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -1049,8 +1050,8 @@ class HomeScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.xl),
             _buildBottomSheetOption(
               context,
-              'Take a Photo',
-              'Snap a picture and let AI analyze it',
+              context.l10n.takeAPhoto,
+              context.l10n.snapPictureAI,
               Icons.camera_alt_rounded,
               colorScheme.primary,
               () {
@@ -1061,8 +1062,8 @@ class HomeScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.md),
             _buildBottomSheetOption(
               context,
-              'Type Description',
-              'Describe your meal in text',
+              context.l10n.typeDescription,
+              context.l10n.describeMealText,
               Icons.edit_rounded,
               colorScheme.secondary,
               () {
@@ -1073,8 +1074,8 @@ class HomeScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.md),
             _buildBottomSheetOption(
               context,
-              'Use Template',
-              'Choose from saved meals',
+              context.l10n.useTemplate,
+              context.l10n.chooseSavedMeals,
               Icons.library_books_rounded,
               colorScheme.tertiary,
               () {
@@ -1085,8 +1086,8 @@ class HomeScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.md),
             _buildBottomSheetOption(
               context,
-              'Log Activity',
-              'Track your exercise and workouts',
+              context.l10n.logActivity,
+              context.l10n.trackExerciseWorkouts,
               Icons.fitness_center_rounded,
               AppColors.proteinPurple,
               () {

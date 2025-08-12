@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'ai_provider.dart';
+import 'ai_prompts.dart';
 import 'secure_storage_fallback.dart';
 
 class GeminiProvider extends AIProvider implements TextAnalysisCapable {
@@ -44,8 +45,8 @@ class GeminiProvider extends AIProvider implements TextAnalysisCapable {
   }
 
   @override
-  Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint, double? estimatedVolume}) async {
-    return analyzeImageWithPortions(imageFile, userHint: userHint, requestPortions: false, estimatedVolume: estimatedVolume);
+  Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint, double? estimatedVolume, String? locale}) async {
+    return analyzeImageWithPortions(imageFile, userHint: userHint, requestPortions: false, estimatedVolume: estimatedVolume, locale: locale);
   }
 
   @override
@@ -54,6 +55,7 @@ class GeminiProvider extends AIProvider implements TextAnalysisCapable {
     String? userHint,
     bool requestPortions = true,
     double? estimatedVolume,
+    String? locale,
   }) async {
     final apiKey = await getApiKey();
     
@@ -255,7 +257,7 @@ Return ONLY a valid JSON object with no additional text, markdown formatting, or
   }
 
   @override
-  Future<TextAnalysisResult> analyzeTextDescription(String description) async {
+  Future<TextAnalysisResult> analyzeTextDescription(String description, {String? locale}) async {
     final apiKey = await getApiKey();
     
     try {

@@ -283,6 +283,8 @@ class CuisineTypeAdapter extends TypeAdapter<CuisineType> {
       case 5:
         return CuisineType.mediterranean;
       case 6:
+        return CuisineType.german;
+      case 7:
         return CuisineType.other;
       default:
         return CuisineType.italian;
@@ -310,8 +312,11 @@ class CuisineTypeAdapter extends TypeAdapter<CuisineType> {
       case CuisineType.mediterranean:
         writer.writeByte(5);
         break;
-      case CuisineType.other:
+      case CuisineType.german:
         writer.writeByte(6);
+        break;
+      case CuisineType.other:
+        writer.writeByte(7);
         break;
     }
   }

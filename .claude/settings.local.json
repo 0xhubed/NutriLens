@@ -38,7 +38,8 @@
       "Bash(true)",
       "Bash(./deploy-to-firebase.sh)",
       "Bash(python3:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(timeout 30 flutter run --debug --device-id=windows)"
     ],
     "deny": []
   }

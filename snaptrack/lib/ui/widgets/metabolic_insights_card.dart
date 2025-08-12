@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../data/models/metabolic_insight.dart';
 import '../../data/models/metabolic_state.dart';
+import '../../data/models/metabolic_state_localizations.dart';
 import '../../core/theme/app_theme.dart';
+import '../../generated/l10n/app_localizations.dart';
 
 class MetabolicInsightsCard extends StatelessWidget {
   final MetabolicInsight insight;
@@ -77,7 +79,7 @@ class MetabolicInsightsCard extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.xs),
               Text(
-                'AI Insight',
+                AppLocalizations.of(context)!.aiInsight,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: _getConfidenceColor(insight.confidenceScore, colorScheme),
                   fontWeight: FontWeight.w500,
@@ -129,7 +131,7 @@ class MetabolicInsightsCard extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               Text(
-                'Current State',
+                AppLocalizations.of(context)!.currentState,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: colorScheme.primary,
@@ -162,7 +164,7 @@ class MetabolicInsightsCard extends StatelessWidget {
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(
-              'Recommendation',
+              AppLocalizations.of(context)!.recommendation,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.secondary,
@@ -199,7 +201,7 @@ class MetabolicInsightsCard extends StatelessWidget {
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(
-              'Action Items',
+              AppLocalizations.of(context)!.actionItems,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: AppColors.primaryGreen,
@@ -384,14 +386,14 @@ class MetabolicStatusWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _getStateTitle(state.phase),
+                      _getStateTitle(state.phase, context),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: _getStateColor(state.phase),
                       ),
                     ),
                     Text(
-                      _formatTimeSinceLastMeal(timeSinceLastMeal),
+                      _formatTimeSinceLastMeal(timeSinceLastMeal, context),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurface.withOpacity(0.7),
                       ),
@@ -403,12 +405,12 @@ class MetabolicStatusWidget extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            state.phaseDescription,
+            state.getPhaseDescription(context),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            state.recommendedAction,
+            state.getRecommendedAction(context),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               fontStyle: FontStyle.italic,
               color: colorScheme.onSurface.withOpacity(0.8),
@@ -435,7 +437,7 @@ class MetabolicStatusWidget extends StatelessWidget {
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   Text(
-                    'Fat burning: ${(state.fatBurningPotential * 100).round()}%',
+                    AppLocalizations.of(context)!.fatBurning((state.fatBurningPotential * 100).round()),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: AppColors.proteinPurple,
                       fontWeight: FontWeight.w500,
@@ -476,27 +478,29 @@ class MetabolicStatusWidget extends StatelessWidget {
     }
   }
 
-  String _getStateTitle(MetabolicPhase phase) {
+  String _getStateTitle(MetabolicPhase phase, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     switch (phase) {
       case MetabolicPhase.fed:
-        return 'Fed State';
+        return 'Fed State'; // Not in screenshots, keeping English for now
       case MetabolicPhase.fasting:
-        return 'Fasting';
+        return 'Fasting'; // Not in screenshots, keeping English for now
       case MetabolicPhase.fatBurning:
-        return 'Fat Burning';
+        return 'Fat Burning'; // Not in screenshots, keeping English for now
       case MetabolicPhase.muscleBuilding:
-        return 'Recovery Mode';
+        return l10n.recoveryMode;
     }
   }
 
-  String _formatTimeSinceLastMeal(Duration duration) {
+  String _formatTimeSinceLastMeal(Duration duration, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
     
     if (hours > 0) {
-      return 'Last meal: ${hours}h ${minutes}m ago';
+      return l10n.lastMeal('${hours}h ${minutes}m');
     } else {
-      return 'Last meal: ${minutes}m ago';
+      return l10n.lastMeal('${minutes}m');
     }
   }
 }

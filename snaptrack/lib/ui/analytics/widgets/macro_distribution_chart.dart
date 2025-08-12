@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 
+import '../../../generated/l10n/app_localizations.dart';
 import '../../../core/utils/responsive_helper.dart' hide ResponsiveText;
 import '../../../data/services/analytics_service.dart';
 import '../../../data/models/macro_profile.dart';
@@ -42,7 +43,7 @@ class _MacroDistributionChartState extends ConsumerState<MacroDistributionChart>
                 ),
                 const SizedBox(width: 8),
                 ResponsiveText(
-                  'Macro Distribution',
+                  AppLocalizations.of(context)!.macroDistribution,
                   style: Theme.of(context).textTheme.titleLarge,
                   baseFontSize: 18,
                 ),

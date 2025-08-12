@@ -79,8 +79,8 @@ class AIProviderManager {
     }
   }
 
-  Future<FoodAnalysis> analyzeWithFallback(File imageFile, {String? userHint, double? estimatedVolume}) async {
-    return analyzeWithPortionsAndFallback(imageFile, userHint: userHint, requestPortions: true, estimatedVolume: estimatedVolume);
+  Future<FoodAnalysis> analyzeWithFallback(File imageFile, {String? userHint, double? estimatedVolume, String? locale}) async {
+    return analyzeWithPortionsAndFallback(imageFile, userHint: userHint, requestPortions: true, estimatedVolume: estimatedVolume, locale: locale);
   }
 
   Future<FoodAnalysis> analyzeWithPortionsAndFallback(
@@ -88,6 +88,7 @@ class AIProviderManager {
     String? userHint,
     bool requestPortions = true,
     double? estimatedVolume,
+    String? locale,
   }) async {
     final active = activeProvider;
     if (active == null) {
@@ -102,6 +103,7 @@ class AIProviderManager {
           userHint: userHint,
           requestPortions: requestPortions,
           estimatedVolume: estimatedVolume,
+          locale: locale,
         );
       } else {
         throw AIProviderException('Active provider not configured', provider: active);
@@ -117,6 +119,7 @@ class AIProviderManager {
               userHint: userHint,
               requestPortions: requestPortions,
               estimatedVolume: estimatedVolume,
+              locale: locale,
             );
           }
         } catch (fallbackError) {
@@ -224,7 +227,7 @@ class AIProviderManager {
     return costs;
   }
 
-  Future<TextAnalysisResult> analyzeTextDescription(String description) async {
+  Future<TextAnalysisResult> analyzeTextDescription(String description, {String? locale}) async {
     final active = activeProvider;
     if (active == null) {
       throw AIProviderException('No active provider configured');
@@ -237,7 +240,7 @@ class AIProviderManager {
       }
 
       if (await active.validateConfiguration()) {
-        return await (active as TextAnalysisCapable).analyzeTextDescription(description);
+        return await (active as TextAnalysisCapable).analyzeTextDescription(description, locale: locale);
       } else {
         throw AIProviderException('Active provider not configured', provider: active);
       }
@@ -249,7 +252,7 @@ class AIProviderManager {
           fallback is TextAnalysisCapable) {
         try {
           if (await fallback.validateConfiguration()) {
-            return await (fallback as TextAnalysisCapable).analyzeTextDescription(description);
+            return await (fallback as TextAnalysisCapable).analyzeTextDescription(description, locale: locale);
           }
         } catch (fallbackError) {
           throw AIProviderException(

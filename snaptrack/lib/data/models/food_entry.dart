@@ -48,6 +48,8 @@ enum CuisineType {
   @HiveField(5)
   mediterranean,
   @HiveField(6)
+  german,
+  @HiveField(7)
   other,
 }
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
+import '../../../generated/l10n/app_localizations.dart';
 import '../../../data/services/analytics_service.dart';
 
 class DailyMacroSummary extends ConsumerWidget {
@@ -33,7 +34,7 @@ class DailyMacroSummary extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Daily Macro Distribution',
+                  AppLocalizations.of(context)!.dailyMacroDistribution,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const Spacer(),

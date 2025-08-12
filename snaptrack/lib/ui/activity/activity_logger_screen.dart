@@ -7,6 +7,8 @@ import '../../core/utils/responsive_helper.dart';
 import '../../data/models/activity_entry.dart';
 import '../../data/providers/activity_providers.dart';
 import '../../data/services/activity_service.dart';
+import '../../data/services/activity_localization.dart';
+import '../../generated/l10n/app_localizations.dart';
 
 class ActivityLoggerScreen extends ConsumerStatefulWidget {
   const ActivityLoggerScreen({super.key});
@@ -80,7 +82,7 @@ class _ActivityLoggerScreenState extends ConsumerState<ActivityLoggerScreen> {
           bottom: AppSpacing.md,
         ),
         title: Text(
-          'Log Activity',
+          AppLocalizations.of(context)!.logActivity,
           style: AppTextStyles.headlineLarge.copyWith(
             color: colorScheme.onSurface,
             fontWeight: FontWeight.w800,
@@ -115,7 +117,7 @@ class _ActivityLoggerScreenState extends ConsumerState<ActivityLoggerScreen> {
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
-          hintText: 'Search activities...',
+          hintText: AppLocalizations.of(context)!.searchActivities,
           prefixIcon: Icon(
             Icons.search_rounded,
             color: colorScheme.onSurfaceVariant,
@@ -153,7 +155,7 @@ class _ActivityLoggerScreenState extends ConsumerState<ActivityLoggerScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Quick Add',
+          AppLocalizations.of(context)!.quickAdd,
           style: AppTextStyles.headlineMedium.copyWith(
             color: colorScheme.onSurface,
           ),
@@ -283,7 +285,7 @@ class _ActivityLoggerScreenState extends ConsumerState<ActivityLoggerScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Categories',
+          AppLocalizations.of(context)!.categories,
           style: AppTextStyles.headlineMedium.copyWith(
             color: colorScheme.onSurface,
           ),
@@ -297,7 +299,7 @@ class _ActivityLoggerScreenState extends ConsumerState<ActivityLoggerScreen> {
             itemBuilder: (context, index) {
               if (index == 0) {
                 return _buildCategoryChip(
-                  'All',
+                  AppLocalizations.of(context)!.all,
                   Icons.apps_rounded,
                   selectedCategory == null,
                   () => ref.read(selectedActivityCategoryProvider.notifier).state = null,
@@ -382,7 +384,7 @@ class _ActivityLoggerScreenState extends ConsumerState<ActivityLoggerScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Activities (${activities.length})',
+          AppLocalizations.of(context)!.activities_count(activities.length),
           style: AppTextStyles.headlineMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
@@ -440,7 +442,7 @@ class _ActivityLoggerScreenState extends ConsumerState<ActivityLoggerScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      activity.name,
+                      ActivityLocalization.localizeActivityName(activity.name, AppLocalizations.of(context)!),
                       style: AppTextStyles.titleMedium.copyWith(
                         color: colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
@@ -448,7 +450,7 @@ class _ActivityLoggerScreenState extends ConsumerState<ActivityLoggerScreen> {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      activity.description,
+                      ActivityLocalization.localizeActivityDescription(activity.description, AppLocalizations.of(context)!),
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -532,19 +534,20 @@ class _ActivityLoggerScreenState extends ConsumerState<ActivityLoggerScreen> {
   }
 
   String _getCategoryName(ActivityCategory category) {
+    final l10n = AppLocalizations.of(context)!;
     switch (category) {
       case ActivityCategory.cardio:
-        return 'Cardio';
+        return l10n.cardio;
       case ActivityCategory.strength:
-        return 'Strength';
+        return l10n.strength;
       case ActivityCategory.sports:
-        return 'Sports';
+        return l10n.sports;
       case ActivityCategory.flexibility:
-        return 'Flexibility';
+        return l10n.flexibility;
       case ActivityCategory.water:
-        return 'Water';
+        return l10n.water;
       case ActivityCategory.other:
-        return 'Other';
+        return l10n.other;
     }
   }
 }

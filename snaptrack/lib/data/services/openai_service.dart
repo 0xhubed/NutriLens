@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'ai_provider.dart';
+import 'ai_prompts.dart';
 import 'secure_storage_fallback.dart';
 
 class OpenAIProvider extends AIProvider implements TextAnalysisCapable {
@@ -57,8 +58,8 @@ class OpenAIProvider extends AIProvider implements TextAnalysisCapable {
   }
 
   @override
-  Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint, double? estimatedVolume}) async {
-    return analyzeImageWithPortions(imageFile, userHint: userHint, requestPortions: false, estimatedVolume: estimatedVolume);
+  Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint, double? estimatedVolume, String? locale}) async {
+    return analyzeImageWithPortions(imageFile, userHint: userHint, requestPortions: false, estimatedVolume: estimatedVolume, locale: locale);
   }
 
   @override
@@ -67,6 +68,7 @@ class OpenAIProvider extends AIProvider implements TextAnalysisCapable {
     String? userHint,
     bool requestPortions = true,
     double? estimatedVolume,
+    String? locale,
   }) async {
     final apiKey = await getApiKey();
     
@@ -162,38 +164,7 @@ class OpenAIProvider extends AIProvider implements TextAnalysisCapable {
               'content': [
                 {
                   'type': 'text',
-                  'text': '''
-Analyze this food image and provide detailed nutrition and categorization information WITH WEIGHT ESTIMATION.
-${userHint != null ? '\nUser description: "$userHint"\nPlease use this information to help identify the food accurately.\n' : ''}
-
-IMPORTANT: Estimate the weight of the food items based on visual cues like plate size, portion size, and food density. Consider typical serving sizes and visual references.
-
-Return ONLY a valid JSON object with no additional text, markdown formatting, or explanation. The JSON should follow this exact structure:
-{
-  "name": "Overall meal/food name",
-  "calories": number,
-  "protein": number (grams), 
-  "carbs": number (grams),
-  "fat": number (grams),
-  "estimatedWeight": number (total estimated weight in grams),
-  "detectedItems": [
-    {
-      "name": "Individual food item",
-      "calories": number,
-      "protein": number,
-      "carbs": number,
-      "fat": number,
-      "portion": "size description",
-      "estimatedWeight": number (estimated weight in grams)
-    }
-  ],
-  "mealType": "breakfast|lunch|dinner|snack",
-  "foodGroups": ["proteins", "grains", "vegetables", "fruits", "dairy", "fats"],
-  "cuisine": "italian|asian|american|mexican|indian|mediterranean|other",
-  "dietaryTags": ["vegetarian", "vegan", "glutenFree", "ketoFriendly", "lowCarb", "highProtein"],
-  "portionSize": "Small|Medium|Large",
-  "cookingMethod": "Grilled|Fried|Steamed|Raw|Baked|etc"${requestPortions ? ',\n  "detectedPortions": [\n    {\n      "foodName": "Individual food item name",\n      "quantity": number,\n      "unitId": "unit identifier (e.g., cup, tbsp, oz, piece)",\n      "unitDisplayName": "unit display name",\n      "estimatedGrams": number\n    }\n  ],\n  "hasPortionData": true' : ''}\n}
-                  ''',
+                  'text': AIPrompts.getFoodAnalysisPrompt('en', userHint: userHint),
                 },
                 {
                   'type': 'image_url',
@@ -257,7 +228,7 @@ Return ONLY a valid JSON object with no additional text, markdown formatting, or
   }
 
   @override
-  Future<TextAnalysisResult> analyzeTextDescription(String description) async {
+  Future<TextAnalysisResult> analyzeTextDescription(String description, {String? locale}) async {
     final apiKey = await getApiKey();
     
     try {
@@ -278,43 +249,11 @@ Return ONLY a valid JSON object with no additional text, markdown formatting, or
           'messages': [
             {
               'role': 'system',
-              'content': '''You are a nutrition expert. Analyze the food description and provide 2-3 food suggestions with estimated portions, units, and nutritional information.
-
-IMPORTANT: Respond with valid JSON only, no additional text.
-
-For each food suggestion, provide:
-1. Name: Specific, clear food name
-2. Weight: Estimated weight in grams
-3. Portion data: Quantity and appropriate unit (e.g., 1 cup, 2 tbsp, 3 oz)
-4. Nutrition for the total portion
-
-Common units to use:
-- Liquids: cup, ml, dl, l, glass, bottle, mug
-- Powders: tsp, tbsp, cup, scoop
-- Solids: piece, slice, oz, g, portion, serving
-- Bulk: handful, cup, bowl
-
-Response format:
-{
-  "suggestions": [
-    {
-      "name": "Food name",
-      "weight": estimated_weight_in_grams,
-      "calories": calories_for_this_portion,
-      "protein": protein_for_this_portion,
-      "carbs": carbs_for_this_portion,
-      "fat": fat_for_this_portion,
-      "quantity": number,
-      "unitId": "unit_id",
-      "unitDisplayName": "unit display name",
-      "description": "Brief explanation including portion size"
-    }
-  ]
-}'''
+              'content': AIPrompts.getTextAnalysisSystemPrompt(locale ?? 'en')
             },
             {
               'role': 'user',
-              'content': 'Analyze this food description: $description'
+              'content': AIPrompts.getTextAnalysisPrompt(locale ?? 'en', description)
             }
           ],
           'max_tokens': 1000,

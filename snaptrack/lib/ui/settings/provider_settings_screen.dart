@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/localization_extension.dart';
 import '../../data/services/ai_provider.dart';
 import '../../data/services/ai_provider_manager.dart';
 import '../../data/providers/analysis_providers.dart';
+import '../../data/providers/locale_provider.dart';
 
 class ProviderSettingsScreen extends ConsumerStatefulWidget {
   const ProviderSettingsScreen({super.key});
@@ -86,6 +88,8 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
                   opacity: _fadeAnimation,
                   child: Column(
                     children: [
+                      _buildGeneralSettings(colorScheme),
+                      const SizedBox(height: AppSpacing.lg),
                       _buildStatusOverview(colorScheme),
                       const SizedBox(height: AppSpacing.lg),
                       _buildProvidersList(colorScheme),
@@ -119,7 +123,7 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
           bottom: AppSpacing.md,
         ),
         title: Text(
-          'AI Providers',
+          context.l10n.settings,
           style: AppTextStyles.headlineLarge.copyWith(
             color: colorScheme.onSurface,
             fontWeight: FontWeight.w700,
@@ -205,7 +209,7 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Current Configuration',
+                      context.l10n.aiProviders,
                       style: AppTextStyles.titleLarge.copyWith(
                         color: colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
@@ -1262,6 +1266,121 @@ class _ProviderSettingsScreenState extends ConsumerState<ProviderSettingsScreen>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildGeneralSettings(ColorScheme colorScheme) {
+    return Card(
+      elevation: 0,
+      color: colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.large,
+        side: BorderSide(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              context.l10n.generalSettings,
+              style: AppTextStyles.headlineMedium.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            _buildLanguageSelector(colorScheme),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageSelector(ColorScheme colorScheme) {
+    final currentLocale = ref.watch(localeProvider);
+    
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.l10n.language,
+                style: AppTextStyles.titleMedium.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                context.l10n.selectLanguage,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        DropdownButton<Locale>(
+          value: currentLocale,
+          icon: Icon(
+            Icons.arrow_drop_down,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          underline: Container(
+            height: 1,
+            color: colorScheme.outline.withOpacity(0.3),
+          ),
+          onChanged: (Locale? newLocale) async {
+            if (newLocale != null && newLocale != currentLocale) {
+              await ref.read(localeProvider.notifier).setLocale(newLocale);
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      newLocale.languageCode == 'de' 
+                        ? 'Sprache auf Deutsch geändert'
+                        : 'Language changed to English',
+                    ),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            }
+          },
+          items: [
+            DropdownMenuItem<Locale>(
+              value: const Locale('en'),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('🇺🇸'),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(context.l10n.english),
+                ],
+              ),
+            ),
+            DropdownMenuItem<Locale>(
+              value: const Locale('de'),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('🇩🇪'),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(context.l10n.german),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
   

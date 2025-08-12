@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../generated/l10n/app_localizations.dart';
 
 import '../../data/models/food_entry.dart';
 import '../../data/models/measurement_unit.dart';
@@ -9,6 +10,7 @@ import '../../data/services/database_service.dart';
 import '../../data/providers/analysis_providers.dart';
 import '../../data/services/analytics_service.dart';
 import '../../data/providers/nutrition_providers.dart';
+import '../../data/providers/locale_provider.dart';
 import '../common/date_time_picker_widget.dart';
 import '../widgets/natural_language_input_widget.dart';
 
@@ -70,12 +72,12 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Food by Text'),
+        title: Text(AppLocalizations.of(context)!.addFoodByText),
         actions: [
           if (_selectedSuggestion != null)
             TextButton(
               onPressed: _saveFoodEntry,
-              child: const Text('Save'),
+              child: Text(AppLocalizations.of(context)!.save),
             ),
         ],
       ),
@@ -105,7 +107,7 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    'Describe your food',
+                    AppLocalizations.of(context)!.describeFoodPlaceholder,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
@@ -122,7 +124,7 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
                   },
                 ),
                 Text(
-                  'Portions',
+                  AppLocalizations.of(context)!.portions,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
@@ -130,8 +132,8 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
             const SizedBox(height: 8),
             Text(
               _usePortionInput 
-                  ? 'Examples: "2 cups rice", "1 tbsp olive oil", "3 medium apples"'
-                  : 'Examples: "Grilled chicken breast with rice", "Large apple", "oatmeal with banana"',
+                  ? AppLocalizations.of(context)!.portionExamples
+                  : AppLocalizations.of(context)!.simpleTextExamples,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Colors.grey[600],
               ),
@@ -150,7 +152,7 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
                   _selectedDateTime = newDateTime;
                 });
               },
-              label: 'When did you eat this?',
+              label: AppLocalizations.of(context)!.whenDidYouEat,
             ),
             
             const SizedBox(height: 24),
@@ -168,19 +170,19 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
                     ? null
                     : _analyzeText,
                 child: _isAnalyzing
-                    ? const Row(
+                    ? Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          SizedBox(
+                          const SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           ),
-                          SizedBox(width: 12),
-                          Text('Analyzing...'),
+                          const SizedBox(width: 12),
+                          Text(AppLocalizations.of(context)!.analyzing),
                         ],
                       )
-                    : const Text('Get Nutrition Info'),
+                    : Text(AppLocalizations.of(context)!.getNutritionInfo),
               ),
             ),
             SizedBox(height: MediaQuery.of(context).viewInsets.bottom > 0 ? 8 : 24),
@@ -274,14 +276,14 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
                 ),
               ),
             ] else if (_isAnalyzing) ...[
-              const Flexible(
+              Flexible(
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('AI is analyzing your food description...'),
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(AppLocalizations.of(context)!.aiAnalyzingFood),
                     ],
                   ),
                 ),
@@ -299,7 +301,7 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Enter a food description to get started',
+                        AppLocalizations.of(context)!.enterFoodDescription,
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 16,
@@ -344,7 +346,8 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
       }
       
       // Call AI provider to analyze text description
-      final result = await aiManager.analyzeTextDescription(fullDescription);
+      final currentLocale = ref.read(localeProvider);
+      final result = await aiManager.analyzeTextDescription(fullDescription, locale: currentLocale.languageCode);
       
       setState(() {
         _suggestions = result.suggestions;
@@ -353,7 +356,7 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Analysis failed: $e'),
+            content: Text(AppLocalizations.of(context)!.analysisFailed(e.toString())),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             margin: EdgeInsets.only(
@@ -438,7 +441,7 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Food entry saved successfully!'),
+            content: Text(AppLocalizations.of(context)!.success),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
             margin: EdgeInsets.only(
@@ -516,8 +519,8 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
   Widget _buildTextInput() {
     return TextField(
       controller: _textController,
-      decoration: const InputDecoration(
-        labelText: 'Food description',
+      decoration: InputDecoration(
+        labelText: AppLocalizations.of(context)!.describeFoodPlaceholder,
         hintText: 'e.g., Grilled salmon with vegetables',
         border: OutlineInputBorder(),
         prefixIcon: Icon(Icons.restaurant),

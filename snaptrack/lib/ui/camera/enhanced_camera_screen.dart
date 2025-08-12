@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/localization_extension.dart';
+import '../../generated/l10n/app_localizations.dart';
 import '../../data/providers/camera_providers.dart';
 import '../analysis/analysis_screen.dart';
 
@@ -22,13 +24,15 @@ class _EnhancedCameraScreenState extends ConsumerState<EnhancedCameraScreen> {
   bool _isCapturing = false;
   XFile? _capturedImage;
   
-  // Simple volume estimation based on common food portions
-  final Map<String, double> _commonPortions = {
-    'Small (4 oz)': 4.0,
-    'Medium (8 oz)': 8.0,
-    'Large (12 oz)': 12.0,
-    'Extra Large (16 oz)': 16.0,
-  };
+  // Simple volume estimation based on common food portions  
+  Map<String, double> _getLocalizedPortions(BuildContext context) {
+    return {
+      '${context.l10n.small} (4 oz)': 4.0,
+      '${context.l10n.medium} (8 oz)': 8.0,
+      '${context.l10n.large} (12 oz)': 12.0,
+      '${context.l10n.extraLarge} (16 oz)': 16.0,
+    };
+  }
   
   String? _selectedPortion;
 
@@ -42,7 +46,7 @@ class _EnhancedCameraScreenState extends ConsumerState<EnhancedCameraScreen> {
       backgroundColor: colorScheme.background,
       appBar: AppBar(
         title: Text(
-          _isARMode ? 'Portion Estimation' : 'Capture Food',
+          _isARMode ? context.l10n.portionEstimation : context.l10n.captureFood,
           style: AppTextStyles.headlineMedium.copyWith(
             color: colorScheme.onSurface,
           ),
@@ -107,16 +111,16 @@ class _EnhancedCameraScreenState extends ConsumerState<EnhancedCameraScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: SegmentedButton<bool>(
-        segments: const [
+        segments: [
           ButtonSegment(
             value: false,
-            label: Text('Standard'),
-            icon: Icon(Icons.camera_alt),
+            label: Text(context.l10n.standard),
+            icon: const Icon(Icons.camera_alt),
           ),
           ButtonSegment(
             value: true,
-            label: Text('Portion Guide'),
-            icon: Icon(Icons.straighten),
+            label: Text(context.l10n.portionGuide),
+            icon: const Icon(Icons.straighten),
           ),
         ],
         selected: {_isARMode},
@@ -241,7 +245,7 @@ class _EnhancedCameraScreenState extends ConsumerState<EnhancedCameraScreen> {
           Wrap(
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
-            children: _commonPortions.entries.map((entry) {
+            children: _getLocalizedPortions(context).entries.map((entry) {
               final isSelected = _selectedPortion == entry.key;
               return FilterChip(
                 label: Text(entry.key),
@@ -418,8 +422,8 @@ class _EnhancedCameraScreenState extends ConsumerState<EnhancedCameraScreen> {
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       _estimatedVolume != null 
-                          ? 'Portion: ${_selectedPortion ?? "Custom"} (${_estimatedVolume!.toStringAsFixed(1)} oz)'
-                          : 'Ready to analyze your food for nutrition info',
+                          ? '${AppLocalizations.of(context)!.portionSizeLabel}: ${_selectedPortion ?? AppLocalizations.of(context)!.custom} (${_estimatedVolume!.toStringAsFixed(1)} oz)'
+                          : AppLocalizations.of(context)!.readyToAnalyze,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -442,7 +446,7 @@ class _EnhancedCameraScreenState extends ConsumerState<EnhancedCameraScreen> {
                     });
                   },
                   icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Retake'),
+                  label: Text(context.l10n.retake),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.lg,
@@ -467,7 +471,7 @@ class _EnhancedCameraScreenState extends ConsumerState<EnhancedCameraScreen> {
                     );
                   },
                   icon: const Icon(Icons.analytics_rounded),
-                  label: const Text('Analyze Food'),
+                  label: Text(context.l10n.analyzeFood),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.lg,
@@ -563,7 +567,7 @@ class _EnhancedCameraScreenState extends ConsumerState<EnhancedCameraScreen> {
             borderRadius: AppRadius.extraLarge,
           ),
           child: Text(
-            _isARMode ? 'Portion estimation for better accuracy' : 'AI-powered nutrition analysis',
+            _isARMode ? AppLocalizations.of(context)!.portionEstimationAccuracy : AppLocalizations.of(context)!.aiPoweredAnalysis,
             style: AppTextStyles.labelLarge.copyWith(
               color: colorScheme.primary,
               fontWeight: FontWeight.w500,

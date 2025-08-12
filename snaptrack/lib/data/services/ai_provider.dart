@@ -3,7 +3,7 @@ import '../models/food_entry.dart';
 import '../models/measurement_unit.dart';
 
 abstract class AIProvider {
-  Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint, double? estimatedVolume});
+  Future<FoodAnalysis> analyzeImage(File imageFile, {String? userHint, double? estimatedVolume, String? locale});
   
   // v1.4: Portion-based analysis
   Future<FoodAnalysis> analyzeImageWithPortions(
@@ -11,6 +11,7 @@ abstract class AIProvider {
     String? userHint,
     bool requestPortions = true,
     double? estimatedVolume,
+    String? locale,
   });
   
   String get name;
@@ -134,7 +135,7 @@ class AIProviderException implements Exception {
 
 // Interface for providers that support text-based food analysis
 abstract class TextAnalysisCapable {
-  Future<TextAnalysisResult> analyzeTextDescription(String description);
+  Future<TextAnalysisResult> analyzeTextDescription(String description, {String? locale});
 }
 
 class FoodSuggestion {

@@ -5,6 +5,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/models/measurement_unit.dart';
 import '../../data/providers/measurement_providers.dart';
 import '../../data/providers/measurement_guide_providers.dart';
+import '../../generated/l10n/app_localizations.dart';
 import '../screens/measurement_guide_screen.dart';
 
 class NaturalLanguageInputWidget extends ConsumerStatefulWidget {
@@ -103,7 +104,7 @@ class _NaturalLanguageInputWidgetState extends ConsumerState<NaturalLanguageInpu
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Text(
-            'Natural Language Input',
+            AppLocalizations.of(context)!.naturalLanguageInput,
             style: AppTextStyles.titleLarge.copyWith(
               color: colorScheme.onSurface,
               fontWeight: FontWeight.w600,
@@ -131,7 +132,7 @@ class _NaturalLanguageInputWidgetState extends ConsumerState<NaturalLanguageInpu
       controller: _controller,
       focusNode: _focusNode,
       decoration: InputDecoration(
-        hintText: widget.hintText ?? 'e.g., "2 cups of rice" or "1 tbsp olive oil"',
+        hintText: widget.hintText ?? AppLocalizations.of(context)!.naturalLanguagePlaceholder,
         filled: true,
         fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
         border: OutlineInputBorder(

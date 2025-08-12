@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../generated/l10n/app_localizations.dart';
 import '../../../data/services/analytics_service.dart';
 
 class WeeklyStatsCard extends ConsumerWidget {
@@ -22,7 +23,7 @@ class WeeklyStatsCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Weekly Summary',
+              AppLocalizations.of(context)!.weeklySummary,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
@@ -36,7 +37,7 @@ class WeeklyStatsCard extends ConsumerWidget {
               ),
               error: (error, stack) => Center(
                 child: Text(
-                  'Error loading stats: $error',
+                  '${AppLocalizations.of(context)!.errorLoadingData}: $error',
                   style: const TextStyle(color: Colors.red),
                 ),
               ),
@@ -56,7 +57,7 @@ class WeeklyStatsCard extends ConsumerWidget {
             Expanded(
               child: _buildStatItem(
                 context,
-                'Avg Calories',
+                AppLocalizations.of(context)!.averageCalories,
                 '${stats.avgCalories.toStringAsFixed(0)}',
                 'kcal',
                 Icons.local_fire_department,
@@ -66,7 +67,7 @@ class WeeklyStatsCard extends ConsumerWidget {
             Expanded(
               child: _buildStatItem(
                 context,
-                'Days Logged',
+                AppLocalizations.of(context)!.daysLogged,
                 '${stats.daysLogged}',
                 '/ 7',
                 Icons.calendar_today,
@@ -83,7 +84,7 @@ class WeeklyStatsCard extends ConsumerWidget {
             Expanded(
               child: _buildMacroItem(
                 context,
-                'Protein',
+                AppLocalizations.of(context)!.protein,
                 stats.avgProtein,
                 'g',
                 Colors.red,
@@ -92,7 +93,7 @@ class WeeklyStatsCard extends ConsumerWidget {
             Expanded(
               child: _buildMacroItem(
                 context,
-                'Carbs',
+                AppLocalizations.of(context)!.carbs,
                 stats.avgCarbs,
                 'g',
                 Colors.green,
@@ -101,7 +102,7 @@ class WeeklyStatsCard extends ConsumerWidget {
             Expanded(
               child: _buildMacroItem(
                 context,
-                'Fat',
+                AppLocalizations.of(context)!.fat,
                 stats.avgFat,
                 'g',
                 Colors.blue,
@@ -115,7 +116,7 @@ class WeeklyStatsCard extends ConsumerWidget {
           const Divider(),
           const SizedBox(height: 8),
           Text(
-            'Top Foods',
+            AppLocalizations.of(context)!.topFoods,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),

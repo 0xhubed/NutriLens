@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../generated/l10n/app_localizations.dart';
 import '../../../data/services/analytics_service.dart';
 
 class InsightsCard extends ConsumerWidget {
@@ -29,7 +30,7 @@ class InsightsCard extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Insights',
+                  AppLocalizations.of(context)!.insights,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
               ],
@@ -100,14 +101,14 @@ class InsightsCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  insight.title,
+                  _getLocalizedInsightTitle(context, insight),
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  insight.description,
+                  _getLocalizedInsightDescription(context, insight),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 if (insight.actionSuggestion != null) ...[
@@ -128,7 +129,7 @@ class InsightsCard extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            insight.actionSuggestion!,
+                            _getLocalizedActionSuggestion(context, insight),
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
@@ -187,6 +188,47 @@ class InsightsCard extends ConsumerWidget {
         return Colors.amber;
       case InsightType.suggestion:
         return Colors.teal;
+    }
+  }
+  
+  String _getLocalizedInsightTitle(BuildContext context, Insight insight) {
+    final l10n = AppLocalizations.of(context)!;
+    
+    // Handle special localization keys
+    switch (insight.title) {
+      case 'startTracking':
+        return l10n.startTracking;
+      default:
+        // For other insights, return the title as-is (they're already in English in analytics_service)
+        return insight.title;
+    }
+  }
+  
+  String _getLocalizedInsightDescription(BuildContext context, Insight insight) {
+    final l10n = AppLocalizations.of(context)!;
+    
+    // Handle special localization keys
+    switch (insight.description) {
+      case 'beginNutritionJourney':
+        return l10n.beginNutritionJourney;
+      default:
+        // For other insights, return the description as-is
+        return insight.description;
+    }
+  }
+  
+  String _getLocalizedActionSuggestion(BuildContext context, Insight insight) {
+    final l10n = AppLocalizations.of(context)!;
+    
+    if (insight.actionSuggestion == null) return '';
+    
+    // Handle special localization keys
+    switch (insight.actionSuggestion!) {
+      case 'tapAddFoodToStart':
+        return l10n.tapAddFoodToStart;
+      default:
+        // For other action suggestions, return as-is
+        return insight.actionSuggestion!;
     }
   }
 }

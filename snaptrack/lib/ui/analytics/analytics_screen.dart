@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../generated/l10n/app_localizations.dart';
 
 import '../../core/utils/responsive_helper.dart';
 import '../../data/models/food_entry.dart';
@@ -54,7 +55,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Analytics',
+          AppLocalizations.of(context)!.analytics,
           style: TextStyle(
             fontSize: ResponsiveHelper.adaptiveFontSize(context, base: 20),
           ),
@@ -67,18 +68,18 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
             Tab(icon: Icon(Icons.trending_up, size: 20)),
             Tab(icon: Icon(Icons.lightbulb, size: 20)),
             Tab(icon: Icon(Icons.timeline, size: 20)),
-          ] : const [
-            Tab(text: 'Overview', icon: Icon(Icons.dashboard)),
-            Tab(text: 'Trends', icon: Icon(Icons.trending_up)),
-            Tab(text: 'Insights', icon: Icon(Icons.lightbulb)),
-            Tab(text: 'Metabolic', icon: Icon(Icons.timeline)),
+          ] : [
+            Tab(text: AppLocalizations.of(context)!.overview, icon: Icon(Icons.dashboard)),
+            Tab(text: AppLocalizations.of(context)!.trends, icon: Icon(Icons.trending_up)),
+            Tab(text: AppLocalizations.of(context)!.insights, icon: Icon(Icons.lightbulb)),
+            Tab(text: AppLocalizations.of(context)!.metabolicData, icon: Icon(Icons.timeline)),
           ],
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.date_range),
             onPressed: _selectWeek,
-            tooltip: 'Select Week',
+            tooltip: AppLocalizations.of(context)!.selectWeek,
           ),
           PopupMenuButton<String>(
             onSelected: (value) {
@@ -92,23 +93,23 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'export',
                 child: Row(
                   children: [
                     Icon(Icons.download),
                     SizedBox(width: 8),
-                    Text('Export Data'),
+                    Text(AppLocalizations.of(context)!.exportData),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'goals',
                 child: Row(
                   children: [
                     Icon(Icons.flag),
                     SizedBox(width: 8),
-                    Text('Set Goals'),
+                    Text(AppLocalizations.of(context)!.setGoals),
                   ],
                 ),
               ),
@@ -341,14 +342,14 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
           children: [
             // Section header
             Text(
-              'Metabolic Analysis',
+              AppLocalizations.of(context)!.metabolicAnalysis,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Track your metabolic state and timing patterns',
+              AppLocalizations.of(context)!.trackMetabolicState,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -374,7 +375,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              'Current Metabolic State',
+                              AppLocalizations.of(context)!.currentMetabolicState,
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                           ],

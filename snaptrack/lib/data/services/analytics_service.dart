@@ -167,11 +167,13 @@ class AnalyticsService {
     final insights = <Insight>[];
     
     if (entries.isEmpty) {
+      // These will be localized by the UI components that display them
+      // We keep the keys here for consistency
       insights.add(Insight(
-        title: "Start Tracking",
-        description: "Begin your nutrition journey by logging your first meal!",
+        title: "startTracking", // Localized key
+        description: "beginNutritionJourney", // Localized key
         type: InsightType.suggestion,
-        actionSuggestion: "Tap 'Add Food' to get started",
+        actionSuggestion: "tapAddFoodToStart", // Localized key
       ));
       return insights;
     }

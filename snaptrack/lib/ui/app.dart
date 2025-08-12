@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_theme.dart';
 import '../core/utils/localization_extension.dart';
+import '../data/providers/locale_provider.dart';
 import 'activity/activity_form_screen.dart';
 import 'activity/activity_logger_screen.dart';
 import 'activity/balance_dashboard_screen.dart';
@@ -89,6 +90,7 @@ class NutriLensApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final locale = ref.watch(localeProvider);
     
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -102,6 +104,7 @@ class NutriLensApp extends ConsumerWidget {
         darkTheme: AppTheme.darkTheme,
         routerConfig: router,
         debugShowCheckedModeBanner: false,
+        locale: locale,
         supportedLocales: LocalizationConfig.supportedLocales,
         localizationsDelegates: LocalizationConfig.localizationsDelegates,
         localeResolutionCallback: LocalizationConfig.localeResolutionCallback,

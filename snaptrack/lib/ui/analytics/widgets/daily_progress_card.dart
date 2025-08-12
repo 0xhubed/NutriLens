@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../generated/l10n/app_localizations.dart';
 import '../../../data/services/analytics_service.dart';
 
 class DailyProgressCard extends ConsumerWidget {
@@ -33,7 +34,7 @@ class DailyProgressCard extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Today\'s Progress',
+                  AppLocalizations.of(context)!.todayProgress,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const Spacer(),

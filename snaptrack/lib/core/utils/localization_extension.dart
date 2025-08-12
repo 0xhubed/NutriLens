@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import '../../generated/l10n/app_localizations.dart';
 
 /// Extension to easily access localizations
 extension LocalizationExtension on BuildContext {
   /// Access app localizations
-  /// Note: This will be replaced with generated localizations after flutter gen-l10n
-  // AppLocalizations get l10n => AppLocalizations.of(this)!;
+  AppLocalizations get l10n => AppLocalizations.of(this);
   
   /// Get current locale
   Locale get currentLocale => Localizations.localeOf(this);
@@ -19,17 +19,9 @@ extension LocalizationExtension on BuildContext {
 
 /// Localization configuration helper
 class LocalizationConfig {
-  static const List<Locale> supportedLocales = [
-    Locale('en', ''), // English
-    Locale('de', ''), // German
-  ];
+  static const List<Locale> supportedLocales = AppLocalizations.supportedLocales;
   
-  static const List<LocalizationsDelegate> localizationsDelegates = [
-    // AppLocalizations.delegate, // Will be uncommented after generation
-    GlobalMaterialLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-  ];
+  static const List<LocalizationsDelegate> localizationsDelegates = AppLocalizations.localizationsDelegates;
   
   /// Locale resolution callback
   static Locale? localeResolutionCallback(
@@ -45,8 +37,8 @@ class LocalizationConfig {
       }
     }
     
-    // Fallback to English if no match found
-    return const Locale('en', '');
+    // Fallback to German if no match found
+    return const Locale('de', '');
   }
 }
 

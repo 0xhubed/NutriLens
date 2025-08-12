@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../generated/l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/measurement_unit.dart';
 import '../../data/providers/measurement_providers.dart';
@@ -109,7 +110,7 @@ class _BulkIngredientInputWidgetState extends ConsumerState<BulkIngredientInputW
           TextButton.icon(
             onPressed: _addAllPortions,
             icon: const Icon(Icons.add_rounded, size: 16),
-            label: const Text('Add All'),
+            label: Text(AppLocalizations.of(context)!.addAll),
             style: TextButton.styleFrom(
               foregroundColor: AppColors.primaryGreen,
             ),
@@ -185,7 +186,7 @@ half cup milk''',
             TextButton.icon(
               onPressed: _controller.text.isEmpty ? null : _clearInput,
               icon: const Icon(Icons.clear_rounded, size: 16),
-              label: const Text('Clear'),
+              label: Text(AppLocalizations.of(context)!.clear),
               style: TextButton.styleFrom(
                 foregroundColor: colorScheme.onSurfaceVariant,
               ),
@@ -471,7 +472,7 @@ half cup milk''',
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Added ${_parsedPortions.length} ingredients'),
+            content: Text(AppLocalizations.of(context)!.addedIngredients(_parsedPortions.length)),
             backgroundColor: AppColors.primaryGreen,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(

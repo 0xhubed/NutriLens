@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../generated/l10n/app_localizations.dart';
+
 import '../../core/theme/app_theme.dart';
 import '../../data/models/food_entry.dart';
 import '../../data/models/measurement_unit.dart';
@@ -456,7 +458,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                 child: ElevatedButton.icon(
                   onPressed: _enterManually,
                   icon: const Icon(Icons.edit_rounded),
-                  label: const Text('Enter Manually'),
+                  label: Text(AppLocalizations.of(context)!.enterManually),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                   ),
@@ -467,7 +469,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                 child: FilledButton.icon(
                   onPressed: _retryAnalysis,
                   icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Retry Analysis'),
+                  label: Text(AppLocalizations.of(context)!.retryAnalysis),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                   ),
@@ -694,7 +696,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
               print('🎯 After _updateFormFields call');
             },
             icon: const Icon(Icons.check_circle_rounded),
-            label: const Text('Looks Good'),
+            label: Text(AppLocalizations.of(context)!.looksGood),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.success,
               foregroundColor: Colors.white,
@@ -709,7 +711,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
               child: ElevatedButton.icon(
                 onPressed: () => _showPartialCorrectionDialog(result),
                 icon: const Icon(Icons.tune_rounded),
-                label: const Text('Partially Correct'),
+                label: Text(AppLocalizations.of(context)!.partiallyCorrect),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.carbsBlue.withOpacity(0.1),
                   foregroundColor: AppColors.carbsBlue,
@@ -727,7 +729,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                   });
                 },
                 icon: const Icon(Icons.close_rounded),
-                label: const Text('Not Correct'),
+                label: Text(AppLocalizations.of(context)!.notCorrect),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.warning.withOpacity(0.1),
                   foregroundColor: AppColors.warning,
@@ -791,7 +793,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                 child: ElevatedButton.icon(
                   onPressed: () => _showHintDialog(result),
                   icon: const Icon(Icons.help_outline_rounded),
-                  label: const Text('Help AI'),
+                  label: Text(AppLocalizations.of(context)!.helpAI),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorScheme.tertiary.withOpacity(0.1),
                     foregroundColor: colorScheme.tertiary,
@@ -811,7 +813,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                     _enterManually();
                   },
                   icon: const Icon(Icons.edit_rounded),
-                  label: const Text('Enter Manually'),
+                  label: Text(AppLocalizations.of(context)!.enterManually),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                   ),
@@ -950,7 +952,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
             child: FilledButton.icon(
               onPressed: _saveFoodEntry,
               icon: const Icon(Icons.save_rounded),
-              label: const Text('Save Food Entry'),
+              label: Text(AppLocalizations.of(context)!.saveFoodEntry),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                 shape: RoundedRectangleBorder(
@@ -1340,7 +1342,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                 size: 20,
               ),
               const SizedBox(width: AppSpacing.sm),
-              Text('Found ${result.detectedPortions!.length} portion(s) - using smart measurement mode'),
+              Text(AppLocalizations.of(context)!.foundPortions(result.detectedPortions!.length)),
             ],
           ),
           backgroundColor: AppColors.primaryGreen,
@@ -1365,7 +1367,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                 size: 20,
               ),
               const SizedBox(width: AppSpacing.sm),
-              const Text('Form updated with AI analysis'),
+              Text(AppLocalizations.of(context)!.formUpdatedWithAI),
             ],
           ),
           backgroundColor: AppColors.success,
@@ -1459,7 +1461,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                   size: 20,
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                const Text('Food entry saved successfully!'),
+                Text(AppLocalizations.of(context)!.foodEntrySavedSuccess),
               ],
             ),
             backgroundColor: AppColors.success,
@@ -1494,7 +1496,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                   size: 20,
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                Text('Error saving entry: $e'),
+                Text(AppLocalizations.of(context)!.errorSavingEntry(e.toString())),
               ],
             ),
             backgroundColor: AppColors.error,
@@ -1572,7 +1574,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
               color: Theme.of(context).colorScheme.tertiary,
             ),
             const SizedBox(width: AppSpacing.sm),
-            const Text('Help AI Identify'),
+            Text(AppLocalizations.of(context)!.helpAIIdentify),
           ],
         ),
         content: Column(
@@ -1599,14 +1601,14 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton(
             onPressed: () {
               Navigator.of(context).pop();
               _reanalyzeWithHint(hintController.text);
             },
-            child: const Text('Re-analyze'),
+            child: Text(AppLocalizations.of(context)!.reAnalyze),
           ),
         ],
       ),
@@ -1642,7 +1644,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
               color: AppColors.carbsBlue,
             ),
             const SizedBox(width: AppSpacing.sm),
-            const Text('Partial Correction'),
+            Text(AppLocalizations.of(context)!.partialCorrection),
           ],
         ),
         content: Column(
@@ -1693,14 +1695,14 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton(
             onPressed: () {
               Navigator.of(context).pop();
               _reanalyzeWithPartialCorrection(originalResult, correctionController.text);
             },
-            child: const Text('Apply Correction'),
+            child: Text(AppLocalizations.of(context)!.applyCorrection),
           ),
         ],
       ),
@@ -1851,7 +1853,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Metabolic Analysis'),
+        title: Text(AppLocalizations.of(context)!.metabolicAnalysis),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1881,7 +1883,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            child: Text(AppLocalizations.of(context)!.close),
           ),
         ],
       ),
