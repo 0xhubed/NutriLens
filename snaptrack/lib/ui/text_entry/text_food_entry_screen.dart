@@ -79,11 +79,28 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
             ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final mediaQuery = MediaQuery.of(context);
+            final keyboardHeight = mediaQuery.viewInsets.bottom;
+            final availableHeight = constraints.maxHeight - keyboardHeight;
+            
+            return SingleChildScrollView(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: 16 + keyboardHeight,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: availableHeight - 32, // Account for padding
+                ),
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
             Row(
               children: [
                 Expanded(
@@ -138,9 +155,12 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
             
             const SizedBox(height: 24),
             
-            // Analyze button
-            SizedBox(
+            // Analyze button - always visible above keyboard
+            Container(
               width: double.infinity,
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? 16 : 0,
+              ),
               child: FilledButton(
                 onPressed: (_usePortionInput && _specifiedPortions.isEmpty) ||
                     (!_usePortionInput && _textController.text.trim().isEmpty) ||
@@ -163,19 +183,26 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
                     : const Text('Get Nutrition Info'),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: MediaQuery.of(context).viewInsets.bottom > 0 ? 8 : 24),
             
-            // Suggestions
+            // Suggestions - flexible height based on available space
             if (_suggestions.isNotEmpty) ...[
               Text(
                 'AI Suggestions',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 12),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _suggestions.length,
-                  itemBuilder: (context, index) {
+              Flexible(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).viewInsets.bottom > 0 
+                        ? 200 // Smaller when keyboard is open
+                        : 400, // Larger when keyboard is closed
+                  ),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _suggestions.length,
+                    itemBuilder: (context, index) {
                     final suggestion = _suggestions[index];
                     final isSelected = _selectedSuggestion == suggestion;
                     return Card(
@@ -243,10 +270,11 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
                       ),
                     );
                   },
+                  ),
                 ),
               ),
             ] else if (_isAnalyzing) ...[
-              const Expanded(
+              const Flexible(
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -259,7 +287,7 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
                 ),
               ),
             ] else ...[
-              Expanded(
+              Flexible(
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -281,8 +309,13 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
                   ),
                 ),
               ),
-            ],
-          ],
+                    ],
+                  ],
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -322,6 +355,13 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
           SnackBar(
             content: Text('Analysis failed: $e'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom + 
+                      MediaQuery.of(context).padding.bottom + 16,
+              left: 16,
+              right: 16,
+            ),
           ),
         );
       }
@@ -397,9 +437,16 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Food entry saved successfully!'),
+          SnackBar(
+            content: const Text('Food entry saved successfully!'),
             backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom + 
+                      MediaQuery.of(context).padding.bottom + 16,
+              left: 16,
+              right: 16,
+            ),
           ),
         );
         
@@ -412,6 +459,13 @@ class _TextFoodEntryScreenState extends ConsumerState<TextFoodEntryScreen> {
           SnackBar(
             content: Text('Failed to save entry: $e'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom + 
+                      MediaQuery.of(context).padding.bottom + 16,
+              left: 16,
+              right: 16,
+            ),
           ),
         );
       }

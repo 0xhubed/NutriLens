@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -89,15 +90,22 @@ class NutriLensApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     
-    return MaterialApp.router(
-      title: 'NutriLens',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      routerConfig: router,
-      debugShowCheckedModeBanner: false,
-      supportedLocales: LocalizationConfig.supportedLocales,
-      localizationsDelegates: LocalizationConfig.localizationsDelegates,
-      localeResolutionCallback: LocalizationConfig.localeResolutionCallback,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
+      child: MaterialApp.router(
+        title: 'NutriLens',
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
+        supportedLocales: LocalizationConfig.supportedLocales,
+        localizationsDelegates: LocalizationConfig.localizationsDelegates,
+        localeResolutionCallback: LocalizationConfig.localeResolutionCallback,
+      ),
     );
   }
 }

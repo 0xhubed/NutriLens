@@ -136,30 +136,39 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
       },
       child: ResponsiveHelper.buildResponsiveContainer(
         context: context,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Week selector
-              _buildWeekSelector(),
-              const SizedBox(height: 16),
-              
-              // Daily progress for today
-              const DailyProgressCard(),
-              const SizedBox(height: 16),
-              
-              // Daily macro distribution
-              const DailyMacroSummary(),
-              const SizedBox(height: 16),
-              
-              // Weekly stats
-              WeeklyStatsCard(weekStart: _weekStart),
-              const SizedBox(height: 16),
-              
-              // Quick insights
-              const InsightsCard(maxInsights: 3),
-            ],
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: 16 + MediaQuery.of(context).padding.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Week selector
+                _buildWeekSelector(),
+                const SizedBox(height: 16),
+                
+                // Daily progress for today
+                const DailyProgressCard(),
+                const SizedBox(height: 16),
+                
+                // Daily macro distribution
+                const DailyMacroSummary(),
+                const SizedBox(height: 16),
+                
+                // Weekly stats
+                WeeklyStatsCard(weekStart: _weekStart),
+                const SizedBox(height: 16),
+                
+                // Quick insights
+                const InsightsCard(maxInsights: 3),
+                const SizedBox(height: 32), // Extra bottom padding
+              ],
+            ),
           ),
         ),
       ),
@@ -171,24 +180,37 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
       onRefresh: () async {
         ref.invalidate(weeklyStatsProvider(_weekStart));
       },
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Week selector
-            _buildWeekSelector(),
-            const SizedBox(height: 16),
-            
-            // Calories trend chart
-            CaloriesTrendChart(weekStart: _weekStart),
-            const SizedBox(height: 16),
-            
-            // Macro distribution
-            MacroDistributionChart(weekStart: _weekStart),
-            const SizedBox(height: 16),
-          ],
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: 16 + MediaQuery.of(context).padding.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Week selector
+              _buildWeekSelector(),
+              const SizedBox(height: 16),
+              
+              // Calories trend chart - constrain height
+              SizedBox(
+                height: 300,
+                child: CaloriesTrendChart(weekStart: _weekStart),
+              ),
+              const SizedBox(height: 16),
+              
+              // Macro distribution - constrain height
+              SizedBox(
+                height: 300,
+                child: MacroDistributionChart(weekStart: _weekStart),
+              ),
+              const SizedBox(height: 32), // Extra bottom padding
+            ],
+          ),
         ),
       ),
     );
@@ -199,13 +221,20 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
       onRefresh: () async {
         ref.invalidate(insightsProvider);
       },
-      child: const SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            InsightsCard(maxInsights: null), // Show all insights
-          ],
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: 16 + MediaQuery.of(context).padding.bottom,
+          ),
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              InsightsCard(maxInsights: null), // Show all insights
+            ],
+          ),
         ),
       ),
     );
@@ -298,9 +327,15 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
         ref.invalidate(metabolicInsightProvider('current_user'));
         ref.invalidate(currentMetabolicStateProvider('current_user'));
       },
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: 16 + MediaQuery.of(context).padding.bottom,
+          ),
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -546,6 +581,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> with TickerPr
             ),
             const SizedBox(height: 32),
           ],
+          ),
         ),
       ),
     );
